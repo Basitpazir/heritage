@@ -16,7 +16,10 @@ import CustomerAccount from "./Pages/CustomerAccount.jsx";
 import TrackOrder from "./Pages/TrackOrder.jsx";
 import GoogleAuthSuccess from "./Pages/GoogleAuthSuccess.jsx";
 
-const API = 'http://localhost:5000/api';
+// UPDATED: Use environment variable for Vercel compatibility
+const API_BASE = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/$/, '') : 'http://localhost:5000';
+const API = `${API_BASE}/api`;
+
 const storedAdminToken = localStorage.getItem('adminToken');
 
 const Layout = ({ children, cartCount, storeInfo }) => {
@@ -114,32 +117,21 @@ function App() {
     <Router>
       <Layout cartCount={cart.length} storeInfo={storeInfo}>
         <Routes>
-          {/* Public only routes */}
           <Route path="/" element={<Home heroImages={heroImages} heroZoom={heroZoom} products={products} />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-          <Route path="/auth/google/success" element={<GoogleAuthSuccess />} />
+          
+          {/* UPDATED: Path matches the backend redirect logic */}
+          <Route path="/google-auth-success" element={<GoogleAuthSuccess />} />
 
-          {/* Protected user routes — requires login */}
-          <Route path="/products" element={
-            <ProtectedRoute><Products /></ProtectedRoute>
-          } />
-          <Route path="/product/:id" element={
-            <ProtectedRoute><ProductDetails addToCart={addToCart} /></ProtectedRoute>
-          } />
-          <Route path="/cart" element={
-            <ProtectedRoute><Cart cart={cart} removeFromCart={removeFromCart} placeOrder={placeOrder} /></ProtectedRoute>
-          } />
-          <Route path="/account" element={
-            <ProtectedRoute><CustomerAccount /></ProtectedRoute>
-          } />
-          <Route path="/track-order" element={
-            <ProtectedRoute><TrackOrder /></ProtectedRoute>
-          } />
+          <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
+          <Route path="/product/:id" element={<ProtectedRoute><ProductDetails addToCart={addToCart} /></ProtectedRoute>} />
+          <Route path="/cart" element={<ProtectedRoute><Cart cart={cart} removeFromCart={removeFromCart} placeOrder={placeOrder} /></ProtectedRoute>} />
+          <Route path="/account" element={<ProtectedRoute><CustomerAccount /></ProtectedRoute>} />
+          <Route path="/track-order" element={<ProtectedRoute><TrackOrder /></ProtectedRoute>} />
 
-          {/* Admin routes — hidden URL, no footer link */}
           <Route path="/admin" element={
-            localStorage.getItem('adminToken')
+            adminToken
               ? <Admin
                   products={products} orders={orders} setOrders={setOrders}
                   addProduct={addProduct} updateProduct={updateProduct} deleteProduct={deleteProduct}
