@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
-const API = 'http://localhost:5000/api';
+// Dynamically use Localhost or Vercel URL
+const API = `${import.meta.env.VITE_API_URL}/api`;
 
 const Products = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState("");
-  const [gridCols, setGridCols] = useState(2); // 1, 2, or 4
+  const [gridCols, setGridCols] = useState(2); 
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -37,7 +38,6 @@ const Products = () => {
     return matchesCategory && matchesSearch;
   });
 
-  // Grid class based on selection
   const gridClass = {
     1: 'grid-cols-1',
     2: 'grid-cols-2',
@@ -52,12 +52,8 @@ const Products = () => {
 
   return (
     <div className="min-h-screen bg-white font-sans">
-
-      {/* Category + Grid Controls */}
       <div className="py-8 sm:py-12 border-b border-stone-100 mt-16 md:mt-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-8">
-
-          {/* Category Filter */}
           <div className="flex justify-center gap-6 sm:gap-8 md:gap-16 mb-6">
             {categories.map((cat) => (
               <button key={cat} onClick={() => { setFilter(cat); if (searchQuery) navigate('/products'); setSearchQuery(""); }}
@@ -69,7 +65,6 @@ const Products = () => {
             ))}
           </div>
 
-          {/* Grid Selector + Search Result */}
           <div className="flex justify-between items-center">
             {searchQuery ? (
               <div>
@@ -84,42 +79,24 @@ const Products = () => {
               <p className="text-[10px] uppercase tracking-widest text-stone-400">{filteredProducts.length} fragrances</p>
             )}
 
-            {/* Grid Toggle */}
             <div className="flex items-center gap-1 border border-stone-200 rounded-lg p-1">
-              {/* 1 col */}
-              <button onClick={() => setGridCols(1)}
-                className={`p-1.5 rounded transition-all ${gridCols === 1 ? 'bg-stone-900 text-white' : 'text-stone-400 hover:text-stone-900'}`}
-                title="Single column">
+              <button onClick={() => setGridCols(1)} className={`p-1.5 rounded transition-all ${gridCols === 1 ? 'bg-stone-900 text-white' : 'text-stone-400 hover:text-stone-900'}`}>
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <rect x="1" y="1" width="12" height="3" rx="1" fill="currentColor"/>
                   <rect x="1" y="6" width="12" height="3" rx="1" fill="currentColor"/>
                   <rect x="1" y="11" width="12" height="3" rx="1" fill="currentColor" opacity="0.4"/>
                 </svg>
               </button>
-              {/* 2 col */}
-              <button onClick={() => setGridCols(2)}
-                className={`p-1.5 rounded transition-all ${gridCols === 2 ? 'bg-stone-900 text-white' : 'text-stone-400 hover:text-stone-900'}`}
-                title="Two columns">
+              <button onClick={() => setGridCols(2)} className={`p-1.5 rounded transition-all ${gridCols === 2 ? 'bg-stone-900 text-white' : 'text-stone-400 hover:text-stone-900'}`}>
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor"/>
-                  <rect x="8" y="1" width="5" height="5" rx="1" fill="currentColor"/>
-                  <rect x="1" y="8" width="5" height="5" rx="1" fill="currentColor"/>
-                  <rect x="8" y="8" width="5" height="5" rx="1" fill="currentColor"/>
+                  <rect x="1" y="1" width="5" height="5" rx="1" fill="currentColor"/><rect x="8" y="1" width="5" height="5" rx="1" fill="currentColor"/>
+                  <rect x="1" y="8" width="5" height="5" rx="1" fill="currentColor"/><rect x="8" y="8" width="5" height="5" rx="1" fill="currentColor"/>
                 </svg>
               </button>
-              {/* 4 col */}
-              <button onClick={() => setGridCols(4)}
-                className={`p-1.5 rounded transition-all ${gridCols === 4 ? 'bg-stone-900 text-white' : 'text-stone-400 hover:text-stone-900'}`}
-                title="Four columns">
+              <button onClick={() => setGridCols(4)} className={`p-1.5 rounded transition-all ${gridCols === 4 ? 'bg-stone-900 text-white' : 'text-stone-400 hover:text-stone-900'}`}>
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <rect x="1" y="1" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
-                  <rect x="4.5" y="1" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
-                  <rect x="8" y="1" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
-                  <rect x="11.5" y="1" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
-                  <rect x="1" y="5.5" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
-                  <rect x="4.5" y="5.5" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
-                  <rect x="8" y="5.5" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
-                  <rect x="11.5" y="5.5" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
+                  <rect x="1" y="1" width="2.5" height="2.5" rx="0.5" fill="currentColor"/><rect x="4.5" y="1" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
+                  <rect x="8" y="1" width="2.5" height="2.5" rx="0.5" fill="currentColor"/><rect x="11.5" y="1" width="2.5" height="2.5" rx="0.5" fill="currentColor"/>
                 </svg>
               </button>
             </div>
@@ -127,12 +104,9 @@ const Products = () => {
         </div>
       </div>
 
-      {/* Product Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-10 sm:py-20">
         {filteredProducts.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-xs text-stone-400 uppercase tracking-widest">No fragrances found matching your selection.</p>
-          </div>
+          <div className="text-center py-20"><p className="text-xs text-stone-400 uppercase tracking-widest">No fragrances found.</p></div>
         ) : (
           <div className={`grid ${gridClass} gap-x-4 sm:gap-x-8 gap-y-10 sm:gap-y-16 transition-all duration-300`}>
             {filteredProducts.map((product) => {
@@ -146,57 +120,27 @@ const Products = () => {
                 <div key={product._id} className="group flex flex-col">
                   <Link to={`/product/${product._id}`} className="relative aspect-[3/4] overflow-hidden bg-stone-50 border border-stone-100">
                     <img src={product.image} alt={product.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-
                     <div className="absolute top-2 sm:top-4 left-2 sm:left-4 flex flex-col gap-1 sm:gap-2">
-                      {product.discount > 0 && (
-                        <span className="bg-stone-900 text-white text-[7px] sm:text-[8px] font-black uppercase tracking-widest px-2 sm:px-3 py-0.5 sm:py-1 shadow-lg">
-                          {product.discount}% OFF
-                        </span>
-                      )}
-                      {isBestSeller && !isSoldOut && (
-                        <span className="bg-amber-500 text-white text-[7px] sm:text-[8px] font-black uppercase tracking-widest px-2 sm:px-3 py-0.5 sm:py-1 shadow-lg">
-                          Best Seller
-                        </span>
-                      )}
+                      {product.discount > 0 && <span className="bg-stone-900 text-white text-[7px] sm:text-[8px] font-black uppercase px-2 py-0.5 shadow-lg">{product.discount}% OFF</span>}
+                      {isBestSeller && !isSoldOut && <span className="bg-amber-500 text-white text-[7px] sm:text-[8px] font-black uppercase px-2 py-0.5 shadow-lg">Best Seller</span>}
                     </div>
-
                     {isSoldOut ? (
                       <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
-                        <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.3em] text-stone-400 border border-stone-200 px-4 sm:px-6 py-2">
-                          Vault Empty
-                        </span>
+                        <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-stone-400 border border-stone-200 px-4 py-2">Vault Empty</span>
                       </div>
                     ) : isLowStock ? (
                       <div className="absolute bottom-0 left-0 right-0 bg-red-600/90 text-white text-center py-1.5">
-                        <p className="text-[7px] sm:text-[8px] font-bold uppercase tracking-widest">
-                          Only {remaining} Remaining
-                        </p>
+                        <p className="text-[7px] font-bold uppercase tracking-widest">Only {remaining} Remaining</p>
                       </div>
                     ) : null}
-
-                    {!isSoldOut && (
-                      <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <span className="bg-white text-stone-900 text-[9px] font-bold uppercase tracking-widest px-6 sm:px-8 py-2 sm:py-3 shadow-xl transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                          Explore
-                        </span>
-                      </div>
-                    )}
                   </Link>
 
                   <div className={`mt-3 sm:mt-6 text-center ${gridCols === 1 ? 'sm:text-left' : ''}`}>
                     <p className="text-[8px] sm:text-[9px] text-stone-400 uppercase tracking-[0.3em] mb-1">{product.brand}</p>
-                    <h3 className={`font-serif text-stone-900 uppercase tracking-widest mb-2 leading-tight ${gridCols === 4 ? 'text-[9px] sm:text-xs' : 'text-xs sm:text-sm'}`}>
-                      {product.name}
-                    </h3>
+                    <h3 className="font-serif text-stone-900 uppercase tracking-widest mb-2 leading-tight text-xs sm:text-sm">{product.name}</h3>
                     <div className="flex flex-col items-center gap-0.5">
-                      <span className={`font-serif text-stone-900 ${gridCols === 4 ? 'text-xs' : 'text-sm'}`}>
-                        Rs. {discountedPrice.toLocaleString()}
-                      </span>
-                      {product.discount > 0 && (
-                        <span className="text-[9px] text-stone-300 line-through">
-                          Rs. {product.price.toLocaleString()}
-                        </span>
-                      )}
+                      <span className="font-serif text-stone-900 text-sm">Rs. {discountedPrice.toLocaleString()}</span>
+                      {product.discount > 0 && <span className="text-[9px] text-stone-300 line-through">Rs. {product.price.toLocaleString()}</span>}
                     </div>
                   </div>
                 </div>
