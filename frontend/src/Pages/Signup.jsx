@@ -7,6 +7,9 @@ const Signup = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
+  // Use the Environment Variable for the API URL
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
   useEffect(() => { setIsVisible(true); }, []);
 
   const handleChange = (e) => {
@@ -18,7 +21,7 @@ const Signup = () => {
     e.preventDefault();
     setErrorMsg('');
     try {
-      const response = await fetch('http://localhost:5000/api/auth/register', {
+      const response = await fetch(`${API_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -37,7 +40,8 @@ const Signup = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:5000/api/auth/google';
+    // Redirect to the live backend Google Auth route
+    window.location.href = `${API_URL}/api/auth/google`;
   };
 
   return (
@@ -62,7 +66,6 @@ const Signup = () => {
           </div>
         )}
 
-        {/* Google Signup Button */}
         <button
           onClick={handleGoogleLogin}
           className="w-full flex items-center justify-center gap-3 border border-stone-200 py-4 mb-8 text-[10px] font-black uppercase tracking-[0.2em] text-stone-700 hover:bg-stone-50 transition-all"

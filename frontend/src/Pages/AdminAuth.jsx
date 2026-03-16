@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
-const API = 'http://localhost:5000/api';
+// Use the Environment Variable for the API URL
+const API = `${import.meta.env.VITE_API_URL}/api` || 'http://localhost:5000/api';
 
 const AdminAuth = ({ onAdminLogin }) => {
   const [adminExists, setAdminExists] = useState(null);
@@ -42,15 +43,12 @@ const AdminAuth = ({ onAdminLogin }) => {
         return;
       }
 
-      // Save token to localStorage first
       localStorage.setItem('adminToken', data.token);
 
-      // Call parent handler
       if (typeof onAdminLogin === 'function') {
         onAdminLogin(data.token);
       }
 
-      // Hard redirect — bypasses React state timing issues
       window.location.href = '/admin';
 
     } catch (err) {
