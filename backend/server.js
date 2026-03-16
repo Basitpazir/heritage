@@ -10,22 +10,43 @@ dotenv.config();
 const app = express();
 
 // ─── Middleware ────────────────────────────────────────────────────────────
+
+// UPDATE: Added your live Vercel URL to the allowed origins
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://heritage-six-delta.vercel.app', // Added this from your screenshot
+  'https://heritage-frontend-gamma.vercel.app',
+  'https://heritage-frontend-nnxykces8-basitpazirs-projects.vercel.app'
+];
+
 app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'https://heritage-frontend-gamma.vercel.app',
-    'https://heritage-frontend-nnxykces8-basitpazirs-projects.vercel.app'
-  ],
-  credentials: true
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Session (required for passport)
 app.use(session({
-  secret: process.env.JWT_SECRET,
+  secret: process.env.JWT_SECRET || 'secret_placeholder', // Fallback to avoid crashes
   resave: false,
-  saveUninitialized: false
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // Only send over HTTPS in production
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+  }
 }));
 
 // Passport
@@ -56,11 +77,13 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('✅ MongoDB Atlas connected');
     const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+    // Note: Vercel uses the exported app, but we keep listen for local dev
+    if (process.env.NODE_ENV !== 'production') {
+        app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+    }
   })
   .catch(err => {
     console.error('❌ MongoDB connection failed:', err.message);
-    process.exit(1);
   });
 
 module.exports = app;
