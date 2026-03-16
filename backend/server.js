@@ -11,6 +11,7 @@ const app = express();
 
 // ─── Middleware ────────────────────────────────────────────────────────────
 
+// Added a wildcard check and explicit Vercel support
 const allowedOrigins = [
   'http://localhost:5173',
   'https://heritage-six-delta.vercel.app',
@@ -20,21 +21,31 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl)
+    // Allow requests with no origin (like mobile apps)
     if (!origin) return callback(null, true);
     
-    if (allowedOrigins.indexOf(origin) === -1) {
-      return callback(new Error('CORS blocked: Origin not allowed'), false);
+    // Check if origin is in the list OR if it's a vercel.app subdomain
+    const isAllowed = allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app');
+    
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS blocked: Origin not allowed'), false);
     }
-    return callback(null, true);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 }));
 
-// Handle pre-flight OPTIONS requests for all routes
-app.options('*', cors());
+// IMPORTANT: Manual Pre-flight handler (Vercel fix)
+app.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin);
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  return res.sendStatus(200);
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -44,10 +55,11 @@ app.use(session({
   secret: process.env.JWT_SECRET || 'secret_placeholder',
   resave: false,
   saveUninitialized: false,
-  proxy: true, // Required for Vercel
+  proxy: true, 
   cookie: {
-    secure: true, // Must be true for 'none' sameSite
-    sameSite: 'none' // Required for cross-domain cookies (frontend vs backend)
+    secure: true, 
+    sameSite: 'none',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }));
 
@@ -75,6 +87,7 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('✅ MongoDB Atlas connected');
     const PORT = process.env.PORT || 5000;
+    // Vercel handles the listening, so we only listen locally
     if (process.env.NODE_ENV !== 'production') {
         app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
     }
