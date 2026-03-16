@@ -11,10 +11,9 @@ const app = express();
 
 // ─── Middleware ────────────────────────────────────────────────────────────
 
-// UPDATE: Added your live Vercel URL to the allowed origins
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://heritage-six-delta.vercel.app', // Added this from your screenshot
+  'https://heritage-six-delta.vercel.app',
   'https://heritage-frontend-gamma.vercel.app',
   'https://heritage-frontend-nnxykces8-basitpazirs-projects.vercel.app'
 ];
@@ -25,8 +24,7 @@ app.use(cors({
     if (!origin) return callback(null, true);
     
     if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      return callback(new Error(msg), false);
+      return callback(new Error('CORS blocked: Origin not allowed'), false);
     }
     return callback(null, true);
   },
@@ -35,21 +33,24 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// Handle pre-flight OPTIONS requests for all routes
+app.options('*', cors());
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Session (required for passport)
+// Session (Adjusted for cross-site cookies on Vercel)
 app.use(session({
-  secret: process.env.JWT_SECRET || 'secret_placeholder', // Fallback to avoid crashes
+  secret: process.env.JWT_SECRET || 'secret_placeholder',
   resave: false,
   saveUninitialized: false,
+  proxy: true, // Required for Vercel
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // Only send over HTTPS in production
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    secure: true, // Must be true for 'none' sameSite
+    sameSite: 'none' // Required for cross-domain cookies (frontend vs backend)
   }
 }));
 
-// Passport
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -61,23 +62,19 @@ app.use('/api/orders',   require('./routes/orders'));
 app.use('/api/cart',     require('./routes/cart'));
 app.use('/api/settings', require('./routes/settings'));
 
-// ─── Health Check ──────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
   res.json({ message: '🌸 Heritage Perfume API is running' });
 });
 
-// ─── Error Handler ─────────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' });
 });
 
-// ─── Connect & Listen ──────────────────────────────────────────────────────
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('✅ MongoDB Atlas connected');
     const PORT = process.env.PORT || 5000;
-    // Note: Vercel uses the exported app, but we keep listen for local dev
     if (process.env.NODE_ENV !== 'production') {
         app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
     }

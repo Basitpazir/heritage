@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 
-// Use the Environment Variable for the API URL
-const API = `${import.meta.env.VITE_API_URL}/api` || 'http://localhost:5000/api';
+// This safely checks if the Vercel variable exists first
+const base_url = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API = `${base_url}/api`;
 
 const AdminAuth = ({ onAdminLogin }) => {
   const [adminExists, setAdminExists] = useState(null);
@@ -11,10 +12,18 @@ const AdminAuth = ({ onAdminLogin }) => {
   const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
-    fetch(`${API}/admin/exists?t=${Date.now()}`, { cache: 'no-store' })
-      .then(r => r.json())
+    // We use a timestamp to prevent the browser from "caching" a failed response
+    fetch(`${API}/admin/exists?t=${Date.now()}`)
+      .then(r => {
+        if (!r.ok) throw new Error('Server not responding');
+        return r.json();
+      })
       .then(data => setAdminExists(data.exists))
-      .catch(() => setAdminExists(false));
+      .catch((err) => {
+        console.error("API Error:", err);
+        setErrorMsg('Cannot reach server. Check VITE_API_URL in Vercel settings.');
+        setAdminExists(false); // Fallback to register if server check fails
+      });
   }, []);
 
   const handleAuth = async (e) => {
@@ -52,14 +61,14 @@ const AdminAuth = ({ onAdminLogin }) => {
       window.location.href = '/admin';
 
     } catch (err) {
-      setErrorMsg('Cannot reach server. Please check your connection.');
+      setErrorMsg('Connection lost. Is the backend URL correct?');
     }
   };
 
-  if (adminExists === null) {
+  if (adminExists === null && !errorMsg) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-[10px] uppercase tracking-widest text-stone-400 animate-pulse">Loading...</p>
+        <p className="text-[10px] uppercase tracking-widest text-stone-400 animate-pulse">Connecting to Heritage Vault...</p>
       </div>
     );
   }
