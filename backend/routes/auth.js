@@ -77,14 +77,19 @@ router.get('/google', passport.authenticate('google', {
 }));
 
 // Step 2 — Google redirects back here
-router.get('/google/callback',
+// UPDATED: Path changed from /google/callback to /callback/google to match Google Cloud Console
+router.get('/callback/google',
   passport.authenticate('google', { session: false, failureRedirect: '/login' }),
   (req, res) => {
-    // Generate JWT for the user
     const token = generateToken(req.user._id);
 
-    // Redirect to frontend with token in URL
-    res.redirect(`http://localhost:5173/auth/google/success?token=${token}&name=${encodeURIComponent(req.user.name)}&email=${encodeURIComponent(req.user.email)}&id=${req.user._id}`);
+    // UPDATED: Dynamically choose between Localhost (for dev) and Vercel (for production)
+    const frontendURL = process.env.NODE_ENV === 'production' 
+      ? "https://heritage-six-delta.vercel.app" 
+      : "http://localhost:5173";
+
+    // Redirect to the success page with the token
+    res.redirect(`${frontendURL}/auth/google/success?token=${token}&name=${encodeURIComponent(req.user.name)}&email=${encodeURIComponent(req.user.email)}&id=${req.user._id}`);
   }
 );
 

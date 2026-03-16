@@ -10,7 +10,9 @@ const Login = () => {
 
   const from = location.state?.from?.pathname || '/products';
 
-  useEffect(() => { setIsVisible(true); }, []);
+  useEffect(() => { 
+    setIsVisible(true); 
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -21,11 +23,15 @@ const Login = () => {
     e.preventDefault();
     setErrorMsg('');
     try {
-const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
+      // Ensure the API URL is clean (no trailing slash)
+      const baseUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+      
+      const response = await fetch(`${baseUrl}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
+      
       const data = await response.json();
       if (response.ok) {
         localStorage.setItem('token', data.token);
@@ -40,7 +46,10 @@ const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/google`;
+    // Robust URL handling: remove trailing slash from base URL if it exists
+    // before appending the auth path
+    const baseUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+    window.location.href = `${baseUrl}/api/auth/google`;
   };
 
   return (
