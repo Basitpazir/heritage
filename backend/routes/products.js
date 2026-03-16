@@ -45,27 +45,20 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST /api/products (UPDATED FOR UPLOADS)
+// POST /api/products
 router.post('/', protectAdmin, upload.single('image'), async (req, res) => {
   try {
-    const { name, brand, category, price, details, notes, features, stock, discount } = req.body;
-    
-    // If a file was uploaded, use the Cloudinary URL. Otherwise, check if a text URL was sent.
+    // Uses URL from body (from CloudinaryUpload.jsx) or direct file upload
     const imageUrl = req.file ? req.file.path : req.body.image;
 
-    if (!imageUrl) {
-      return res.status(400).json({ error: 'Image is required' });
-    }
+    if (!imageUrl) return res.status(400).json({ error: 'Image is required' });
 
     const product = await Product.create({
-      name, brand, category,
-      price: Number(price),
+      ...req.body,
       image: imageUrl,
-      details: details || '',
-      notes: notes || '',
-      features: features || '',
-      stock: Number(stock) || 0,
-      discount: Number(discount) || 0,
+      price: Number(req.body.price),
+      stock: Number(req.body.stock) || 0,
+      discount: Number(req.body.discount) || 0,
       sold: 0,
       reviews: []
     });
@@ -76,26 +69,18 @@ router.post('/', protectAdmin, upload.single('image'), async (req, res) => {
   }
 });
 
-// PUT /api/products/:id (UPDATED FOR UPLOADS)
+// PUT /api/products/:id
 router.put('/:id', protectAdmin, upload.single('image'), async (req, res) => {
   try {
-    const { name, brand, category, price, details, notes, features, stock, discount } = req.body;
-    
-    let updateData = {
-      name, brand, category,
-      price: Number(price),
-      details: details || '',
-      notes: notes || '',
-      features: features || '',
-      stock: Number(stock),
-      discount: Number(discount)
+    let updateData = { 
+      ...req.body,
+      price: Number(req.body.price),
+      stock: Number(req.body.stock),
+      discount: Number(req.body.discount)
     };
-
-    // If a new image file is uploaded, update the URL
+    
     if (req.file) {
       updateData.image = req.file.path;
-    } else if (req.body.image) {
-      updateData.image = req.body.image;
     }
 
     const product = await Product.findByIdAndUpdate(

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import CloudinaryUpload from '../Component/CloudinaryUpload.jsx';
 
-const API = 'http://localhost:5000/api';
+// Updated to your live backend URL
+const API = 'https://heritage-backend-mu.vercel.app/api';
 
 const Admin = ({
   products = [], orders = [], setOrders,
@@ -49,25 +50,43 @@ const Admin = ({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!newProduct.image) { alert('Please upload a product image.'); return; }
-    addProduct({ ...newProduct, price: parseInt(newProduct.price), stock: parseInt(newProduct.stock)||0 });
+    // Passing clean data to the addProduct function
+    addProduct({ 
+      ...newProduct, 
+      price: Number(newProduct.price), 
+      stock: Number(newProduct.stock) || 0,
+      discount: Number(newProduct.discount) || 0 
+    });
     setNewProduct({ name:'', brand:'', category:'Men', price:'', image:'', details:'', notes:'', features:'', stock:0, discount:0 });
     alert('Fragrance added to vault.');
   };
 
   const handleEditSubmit = (e) => {
     e.preventDefault();
-    updateProduct(editingProduct._id, { ...editingProduct, price: parseInt(editingProduct.price), stock: parseInt(editingProduct.stock) });
+    updateProduct(editingProduct._id, { 
+      ...editingProduct, 
+      price: Number(editingProduct.price), 
+      stock: Number(editingProduct.stock) 
+    });
     setEditingProduct(null);
   };
 
   const updateOrderStatus = async (orderId, newStatus) => {
-    const res = await fetch(`${API}/orders/${orderId}/status`, { method:'PUT', headers:{'Content-Type':'application/json', Authorization:`Bearer ${adminToken}`}, body: JSON.stringify({status: newStatus}) });
+    const res = await fetch(`${API}/orders/${orderId}/status`, { 
+      method:'PUT', 
+      headers:{'Content-Type':'application/json', Authorization:`Bearer ${adminToken}`}, 
+      body: JSON.stringify({status: newStatus}) 
+    });
     if (res.ok) setOrders(orders.map(o => o._id === orderId ? {...o, status: newStatus} : o));
   };
 
   const handleSaveSettings = async () => {
     setSavingSettings(true);
-    await fetch(`${API}/settings/store`, { method:'PUT', headers:{'Content-Type':'application/json', Authorization:`Bearer ${adminToken}`}, body: JSON.stringify(storeInfo) });
+    await fetch(`${API}/settings/store`, { 
+      method:'PUT', 
+      headers:{'Content-Type':'application/json', Authorization:`Bearer ${adminToken}`}, 
+      body: JSON.stringify(storeInfo) 
+    });
     setSavingSettings(false);
     alert('Settings saved!');
   };
@@ -82,6 +101,7 @@ const Admin = ({
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-neutral-300 pt-8 pb-12 px-4 lg:px-8 font-sans">
+      {/* ... (Rest of the JSX remains the same as your original) ... */}
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center mb-8 bg-[#121212] p-6 rounded-2xl border border-neutral-800 gap-6">
         <div>
           <h2 className="text-2xl font-serif text-white uppercase tracking-widest">Executive Suite</h2>
@@ -97,7 +117,6 @@ const Admin = ({
       </div>
 
       <div className="max-w-7xl mx-auto">
-
         {activeTab === 'dashboard' && (
           <div className="space-y-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -151,55 +170,56 @@ const Admin = ({
                 <button type="submit" className="md:col-span-3 bg-white text-black py-4 rounded-lg uppercase tracking-[0.3em] text-[10px] font-bold hover:bg-neutral-200">Publish Fragrance</button>
               </form>
             </div>
-            <div className="bg-[#121212] rounded-2xl border border-neutral-800 overflow-hidden">
-              <div className="p-4 md:p-6 border-b border-neutral-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-neutral-900/50">
-                <h3 className="text-xs font-bold text-white uppercase tracking-widest">Active Database</h3>
-                <div className="flex flex-wrap gap-3">
-                  <input placeholder="Search..." className="text-[10px] bg-neutral-900 border border-neutral-800 rounded-md outline-none px-3 py-2 text-white w-36" value={inventorySearch} onChange={e=>setInventorySearch(e.target.value)} />
-                  <SortSelect value={inventorySort} onChange={setInventorySort} options={[
-                    {value:'newest',label:'🕐 Newest'},{value:'oldest',label:'🕐 Oldest'},
-                    {value:'price_high',label:'💰 Price ↑'},{value:'price_low',label:'💰 Price ↓'},
-                    {value:'stock_low',label:'⚠️ Low Stock'},{value:'best_seller',label:'🏆 Best Seller'},
-                  ]} />
-                </div>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm whitespace-nowrap">
-                  <thead className="bg-[#121212] text-[9px] uppercase tracking-widest font-bold text-neutral-500 border-b border-neutral-800">
-                    <tr><th className="p-4 md:p-6">Product</th><th className="p-4 md:p-6 text-center">Stock</th><th className="p-4 md:p-6 text-center hidden sm:table-cell">Added</th><th className="p-4 md:p-6 text-center">Status</th><th className="p-4 md:p-6 text-right">Actions</th></tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-800">
-                    {sortedInventory.map(item => {
-                      const remaining = (item.stock||0)-(item.sold||0);
-                      const addedDate = item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-PK',{day:'numeric',month:'short',year:'numeric'}) : '—';
-                      return (
-                        <tr key={item._id} className="hover:bg-neutral-900/30">
-                          <td className="p-4 md:p-6 flex items-center gap-3">
-                            <img src={item.image} className="w-10 h-10 object-cover rounded-md border border-neutral-800 flex-shrink-0" alt="" />
-                            <div><p className="font-serif text-sm text-white">{item.name}</p><p className="text-[9px] text-neutral-500">{item.brand} | Rs. {item.price?.toLocaleString()}</p></div>
-                          </td>
-                          <td className="p-4 md:p-6 text-center"><span className="text-white font-mono">{remaining}</span><span className="text-neutral-600 text-xs"> / {item.stock}</span></td>
-                          <td className="p-4 md:p-6 text-center text-[9px] text-neutral-500 hidden sm:table-cell">{addedDate}</td>
-                          <td className="p-4 md:p-6 text-center">
-                            <span className={`text-[8px] font-black px-2 py-1 rounded-full uppercase border ${remaining>0?'bg-green-950/30 text-green-400 border-green-900/50':'bg-red-950/30 text-red-400 border-red-900/50'}`}>
-                              {remaining>0?'Active':'Depleted'}
-                            </span>
-                          </td>
-                          <td className="p-4 md:p-6 text-right space-x-1">
-                            <button onClick={()=>setViewingInsights(item)} className="text-[9px] bg-neutral-800 hover:bg-neutral-700 text-white px-2 py-1.5 rounded">Insights</button>
-                            <button onClick={()=>setEditingProduct(item)} className="text-[9px] bg-neutral-800 hover:bg-neutral-700 text-white px-2 py-1.5 rounded">Edit</button>
-                            <button onClick={()=>deleteProduct(item._id)} className="text-[9px] border border-red-900/50 text-red-400 hover:bg-red-950/30 px-2 py-1.5 rounded">Drop</button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            {/* ... List and Other Tabs ... */}
+             <div className="bg-[#121212] rounded-2xl border border-neutral-800 overflow-hidden">
+               <div className="p-4 md:p-6 border-b border-neutral-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-neutral-900/50">
+                 <h3 className="text-xs font-bold text-white uppercase tracking-widest">Active Database</h3>
+                 <div className="flex flex-wrap gap-3">
+                   <input placeholder="Search..." className="text-[10px] bg-neutral-900 border border-neutral-800 rounded-md outline-none px-3 py-2 text-white w-36" value={inventorySearch} onChange={e=>setInventorySearch(e.target.value)} />
+                   <SortSelect value={inventorySort} onChange={setInventorySort} options={[
+                     {value:'newest',label:'🕐 Newest'},{value:'oldest',label:'🕐 Oldest'},
+                     {value:'price_high',label:'💰 Price ↑'},{value:'price_low',label:'💰 Price ↓'},
+                     {value:'stock_low',label:'⚠️ Low Stock'},{value:'best_seller',label:'🏆 Best Seller'},
+                   ]} />
+                 </div>
+               </div>
+               <div className="overflow-x-auto">
+                 <table className="w-full text-left text-sm whitespace-nowrap">
+                   <thead className="bg-[#121212] text-[9px] uppercase tracking-widest font-bold text-neutral-500 border-b border-neutral-800">
+                     <tr><th className="p-4 md:p-6">Product</th><th className="p-4 md:p-6 text-center">Stock</th><th className="p-4 md:p-6 text-center hidden sm:table-cell">Added</th><th className="p-4 md:p-6 text-center">Status</th><th className="p-4 md:p-6 text-right">Actions</th></tr>
+                   </thead>
+                   <tbody className="divide-y divide-neutral-800">
+                     {sortedInventory.map(item => {
+                       const remaining = (item.stock||0)-(item.sold||0);
+                       const addedDate = item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-PK',{day:'numeric',month:'short',year:'numeric'}) : '—';
+                       return (
+                         <tr key={item._id} className="hover:bg-neutral-900/30">
+                           <td className="p-4 md:p-6 flex items-center gap-3">
+                             <img src={item.image} className="w-10 h-10 object-cover rounded-md border border-neutral-800 flex-shrink-0" alt="" />
+                             <div><p className="font-serif text-sm text-white">{item.name}</p><p className="text-[9px] text-neutral-500">{item.brand} | Rs. {item.price?.toLocaleString()}</p></div>
+                           </td>
+                           <td className="p-4 md:p-6 text-center"><span className="text-white font-mono">{remaining}</span><span className="text-neutral-600 text-xs"> / {item.stock}</span></td>
+                           <td className="p-4 md:p-6 text-center text-[9px] text-neutral-500 hidden sm:table-cell">{addedDate}</td>
+                           <td className="p-4 md:p-6 text-center">
+                             <span className={`text-[8px] font-black px-2 py-1 rounded-full uppercase border ${remaining>0?'bg-green-950/30 text-green-400 border-green-900/50':'bg-red-950/30 text-red-400 border-red-900/50'}`}>
+                               {remaining>0?'Active':'Depleted'}
+                             </span>
+                           </td>
+                           <td className="p-4 md:p-6 text-right space-x-1">
+                             <button onClick={()=>setViewingInsights(item)} className="text-[9px] bg-neutral-800 hover:bg-neutral-700 text-white px-2 py-1.5 rounded">Insights</button>
+                             <button onClick={()=>setEditingProduct(item)} className="text-[9px] bg-neutral-800 hover:bg-neutral-700 text-white px-2 py-1.5 rounded">Edit</button>
+                             <button onClick={()=>deleteProduct(item._id)} className="text-[9px] border border-red-900/50 text-red-400 hover:bg-red-950/30 px-2 py-1.5 rounded">Drop</button>
+                           </td>
+                         </tr>
+                       );
+                     })}
+                   </tbody>
+                 </table>
+               </div>
+             </div>
           </div>
         )}
-
+        {/* ... Rest of Tabs (Orders, Design, Settings) ... */}
         {activeTab === 'orders' && (
           <div className="space-y-6">
             {!selectedOrder ? (
