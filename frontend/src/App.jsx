@@ -16,7 +16,7 @@ import CustomerAccount from "./Pages/CustomerAccount.jsx";
 import TrackOrder from "./Pages/TrackOrder.jsx";
 import GoogleAuthSuccess from "./Pages/GoogleAuthSuccess.jsx";
 
-// UPDATED: Use environment variable for Vercel compatibility
+// Use environment variable for Vercel compatibility
 const API_BASE = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/$/, '') : 'http://localhost:5000';
 const API = `${API_BASE}/api`;
 
@@ -121,8 +121,8 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           
-          {/* UPDATED: Path matches the backend redirect logic */}
-          <Route path="/google-auth-success" element={<GoogleAuthSuccess />} />
+          {/* FIXED: Changed from /google-auth-success to /auth/google/success so it perfectly matches the backend redirect */}
+          <Route path="/auth/google/success" element={<GoogleAuthSuccess />} />
 
           <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
           <Route path="/product/:id" element={<ProtectedRoute><ProductDetails addToCart={addToCart} /></ProtectedRoute>} />
