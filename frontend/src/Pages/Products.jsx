@@ -3,17 +3,20 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 const API = `${import.meta.env.VITE_API_URL}/api`;
 
+const AUDIENCES = ['All', 'Men', 'Women', 'Unisex'];
+const TYPES = ['All', 'Fragrances', 'Accessories', 'Apparel', 'Tech', 'Lifestyle'];
+
 const Products = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('All');
+  const [audienceFilter, setAudienceFilter] = useState('All');
+  const [typeFilter, setTypeFilter] = useState('All');
+  const [onSaleOnly, setOnSaleOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [gridCols, setGridCols] = useState(2);
 
   const location = useLocation();
   const navigate = useNavigate();
-
-  const categories = ['All', 'Fragrances', 'Accessories', 'Apparel', 'Tech', 'Lifestyle'];
 
   useEffect(() => {
     fetch(`${API}/products`)
@@ -25,31 +28,55 @@ const Products = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const search = params.get('search');
-    const category = params.get('category');
-    if (search) { setSearchQuery(search.toLowerCase()); setFilter('All'); }
-    else if (category) {
-      const match = categories.find(c => c.toLowerCase() === category.toLowerCase());
-      if (match) setFilter(match);
-      setSearchQuery('');
+    const audience = params.get('audience');
+    const type = params.get('type');
+    const onSale = params.get('onSale');
+
+    if (search) {
+      setSearchQuery(search.toLowerCase());
+      setAudienceFilter('All');
+      setTypeFilter('All');
+      setOnSaleOnly(false);
+      return;
+    }
+
+    setSearchQuery('');
+    setOnSaleOnly(onSale === 'true');
+
+    if (audience) {
+      const match = AUDIENCES.find(a => a.toLowerCase() === audience.toLowerCase());
+      setAudienceFilter(match || 'All');
     } else {
-      setSearchQuery('');
+      setAudienceFilter('All');
+    }
+    if (type) {
+      const match = TYPES.find(t => t.toLowerCase() === type.toLowerCase());
+      setTypeFilter(match || 'All');
+    } else {
+      setTypeFilter('All');
     }
   }, [location.search]);
 
   const filteredProducts = products.filter(product => {
-    const cat = product.category?.toLowerCase() || '';
-    const matchesCategory = filter === 'All' || cat === filter.toLowerCase() ||
-      (filter === 'Fragrances' && cat === 'men') ||
-      (filter === 'Fragrances' && cat === 'women') ||
-      (filter === 'Fragrances' && cat === 'unisex');
+    const matchesAudience = audienceFilter === 'All' || (product.audience || '').toLowerCase() === audienceFilter.toLowerCase();
+    const matchesType = typeFilter === 'All' || (product.type || '').toLowerCase() === typeFilter.toLowerCase();
+    const matchesSale = !onSaleOnly || (product.discount || 0) > 0;
     const matchesSearch =
       product.name.toLowerCase().includes(searchQuery) ||
       (product.brand && product.brand.toLowerCase().includes(searchQuery)) ||
       (product.notes && product.notes.toLowerCase().includes(searchQuery));
-    return matchesCategory && matchesSearch;
+    return matchesAudience && matchesType && matchesSale && matchesSearch;
   });
 
   const gridClass = { 1: 'grid-cols-1', 2: 'grid-cols-2', 4: 'grid-cols-2 lg:grid-cols-4' }[gridCols];
+
+  const applyFilter = (aud, type, sale = onSaleOnly) => {
+    const params = new URLSearchParams();
+    if (aud !== 'All') params.set('audience', aud.toLowerCase());
+    if (type !== 'All') params.set('type', type.toLowerCase());
+    if (sale) params.set('onSale', 'true');
+    navigate(params.toString() ? `/products?${params.toString()}` : '/products');
+  };
 
   if (loading) return (
     <div className="min-h-screen bg-black flex items-center justify-center">
@@ -60,62 +87,86 @@ const Products = () => {
   return (
     <div className="min-h-screen bg-black text-white font-sans">
 
-      {/* Category nav */}
+      {/* Filter nav */}
       <div className="border-b border-white/5 sticky top-[72px] z-10 bg-black/98 backdrop-blur-xl">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-8">
-          <div className="flex items-center justify-between py-4 sm:py-5">
-            {/* Categories */}
-            <div className="flex gap-4 sm:gap-6 md:gap-8 overflow-x-auto scrollbar-hide">
-              {categories.map(cat => (
-                <button key={cat}
-                  onClick={() => { setFilter(cat); navigate('/products'); setSearchQuery(''); }}
+          <div className="flex flex-col gap-3 py-4 sm:py-5">
+
+            {/* Audience row */}
+            <div className="flex items-center justify-between">
+              <div className="flex gap-4 sm:gap-6 md:gap-8 overflow-x-auto scrollbar-hide">
+                {AUDIENCES.map(aud => (
+                  <button key={aud}
+                    onClick={() => applyFilter(aud, typeFilter)}
+                    className={`text-[9px] font-bold uppercase tracking-[0.3em] whitespace-nowrap transition-all pb-0.5 flex-shrink-0 ${
+                      audienceFilter === aud && !searchQuery && !onSaleOnly
+                        ? 'text-white border-b border-white'
+                        : 'text-white/30 hover:text-white'
+                    }`}>
+                    {aud}
+                  </button>
+                ))}
+                <button
+                  onClick={() => applyFilter(audienceFilter, typeFilter, !onSaleOnly)}
                   className={`text-[9px] font-bold uppercase tracking-[0.3em] whitespace-nowrap transition-all pb-0.5 flex-shrink-0 ${
-                    filter === cat && !searchQuery
-                      ? 'text-white border-b border-white'
-                      : 'text-white/30 hover:text-white'
+                    onSaleOnly ? 'text-white border-b border-white' : 'text-white/30 hover:text-white'
                   }`}>
-                  {cat}
+                  Outlet
                 </button>
-              ))}
+              </div>
+
+              <div className="flex items-center gap-4 flex-shrink-0 ml-4">
+                {searchQuery ? (
+                  <div className="hidden sm:flex items-center gap-2">
+                    <span className="text-[9px] text-white/30 uppercase tracking-widest">"{searchQuery}"</span>
+                    <button onClick={() => navigate('/products')} className="text-[8px] text-white/20 hover:text-white uppercase tracking-widest">✕</button>
+                  </div>
+                ) : (
+                  <span className="hidden sm:block text-[9px] text-white/20 uppercase tracking-widest">{filteredProducts.length} items</span>
+                )}
+
+                <div className="flex items-center gap-1 border border-white/10 rounded p-1">
+                  {[1, 2, 4].map(cols => (
+                    <button key={cols} onClick={() => setGridCols(cols)}
+                      className={`p-1.5 rounded transition-all ${gridCols === cols ? 'bg-white text-black' : 'text-white/30 hover:text-white'}`}>
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        {cols === 1 && <>
+                          <rect x="1" y="1" width="10" height="2.5" rx="0.5" fill="currentColor"/>
+                          <rect x="1" y="4.75" width="10" height="2.5" rx="0.5" fill="currentColor"/>
+                          <rect x="1" y="8.5" width="10" height="2.5" rx="0.5" fill="currentColor" opacity="0.4"/>
+                        </>}
+                        {cols === 2 && <>
+                          <rect x="1" y="1" width="4" height="4" rx="0.5" fill="currentColor"/>
+                          <rect x="7" y="1" width="4" height="4" rx="0.5" fill="currentColor"/>
+                          <rect x="1" y="7" width="4" height="4" rx="0.5" fill="currentColor"/>
+                          <rect x="7" y="7" width="4" height="4" rx="0.5" fill="currentColor"/>
+                        </>}
+                        {cols === 4 && <>
+                          {[0,3,6,9].map(x => [0,3,6,9].map(y => (
+                            <rect key={`${x}-${y}`} x={x > 0 ? x/9*10+1 : 1} y={y > 0 ? y/9*10+1 : 1} width="2" height="2" rx="0.3" fill="currentColor"/>
+                          )))}
+                        </>}
+                      </svg>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            {/* Grid toggle + count */}
-            <div className="flex items-center gap-4 flex-shrink-0 ml-4">
-              {searchQuery ? (
-                <div className="hidden sm:flex items-center gap-2">
-                  <span className="text-[9px] text-white/30 uppercase tracking-widest">"{searchQuery}"</span>
-                  <button onClick={() => navigate('/products')} className="text-[8px] text-white/20 hover:text-white uppercase tracking-widest">✕</button>
-                </div>
-              ) : (
-                <span className="hidden sm:block text-[9px] text-white/20 uppercase tracking-widest">{filteredProducts.length} items</span>
-              )}
-
-              <div className="flex items-center gap-1 border border-white/10 rounded p-1">
-                {[1, 2, 4].map(cols => (
-                  <button key={cols} onClick={() => setGridCols(cols)}
-                    className={`p-1.5 rounded transition-all ${gridCols === cols ? 'bg-white text-black' : 'text-white/30 hover:text-white'}`}>
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                      {cols === 1 && <>
-                        <rect x="1" y="1" width="10" height="2.5" rx="0.5" fill="currentColor"/>
-                        <rect x="1" y="4.75" width="10" height="2.5" rx="0.5" fill="currentColor"/>
-                        <rect x="1" y="8.5" width="10" height="2.5" rx="0.5" fill="currentColor" opacity="0.4"/>
-                      </>}
-                      {cols === 2 && <>
-                        <rect x="1" y="1" width="4" height="4" rx="0.5" fill="currentColor"/>
-                        <rect x="7" y="1" width="4" height="4" rx="0.5" fill="currentColor"/>
-                        <rect x="1" y="7" width="4" height="4" rx="0.5" fill="currentColor"/>
-                        <rect x="7" y="7" width="4" height="4" rx="0.5" fill="currentColor"/>
-                      </>}
-                      {cols === 4 && <>
-                        {[0,3,6,9].map(x => [0,3,6,9].map(y => (
-                          <rect key={`${x}-${y}`} x={x > 0 ? x/9*10+1 : 1} y={y > 0 ? y/9*10+1 : 1} width="2" height="2" rx="0.3" fill="currentColor"/>
-                        )))}
-                      </>}
-                    </svg>
+            {/* Type row (sub-filter) */}
+            {!searchQuery && (
+              <div className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-hide">
+                {TYPES.map(type => (
+                  <button key={type}
+                    onClick={() => applyFilter(audienceFilter, type)}
+                    className={`text-[8px] font-bold uppercase tracking-[0.25em] whitespace-nowrap transition-all flex-shrink-0 ${
+                      typeFilter === type ? 'text-white/90' : 'text-white/25 hover:text-white/60'
+                    }`}>
+                    {type}
                   </button>
                 ))}
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
@@ -141,7 +192,6 @@ const Products = () => {
                     <img src={product.image} alt={product.name}
                       className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" />
 
-                    {/* Badges */}
                     <div className="absolute top-3 left-3 flex flex-col gap-1.5">
                       {product.discount > 0 && (
                         <span className="bg-white text-black text-[7px] font-black uppercase tracking-widest px-2 py-0.5">-{product.discount}%</span>

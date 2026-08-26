@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import CloudinaryUpload from '../Component/CloudinaryUpload.jsx';
 
-// Uses the same env var as the rest of the app (App.jsx, Login.jsx, etc.)
 const API_BASE = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/$/, '') : 'http://localhost:5000';
 const API = `${API_BASE}/api`;
 
-// Matches backend/models/Product.js category enum exactly
-const CATEGORIES = ['Fragrances', 'Accessories', 'Apparel', 'Tech', 'Lifestyle', 'Men', 'Women', 'Unisex'];
+const AUDIENCES = ['Men', 'Women', 'Unisex'];
+const TYPES = ['Fragrances', 'Accessories', 'Apparel', 'Tech', 'Lifestyle'];
 
 const Admin = ({
   products = [], orders = [], setOrders,
@@ -22,7 +21,7 @@ const Admin = ({
   const [editingProduct, setEditingProduct] = useState(null);
   const [viewingInsights, setViewingInsights] = useState(null);
   const [savingSettings, setSavingSettings] = useState(false);
-  const [newProduct, setNewProduct] = useState({ name: '', brand: '', category: 'Fragrances', price: '', image: '', details: '', notes: '', features: '', stock: 0, discount: 0 });
+  const [newProduct, setNewProduct] = useState({ name: '', brand: '', audience: 'Men', type: 'Fragrances', price: '', image: '', details: '', notes: '', features: '', stock: 0, discount: 0 });
 
   const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);
   const totalUnitsSold = products.reduce((sum, p) => sum + (p.sold || 0), 0);
@@ -60,7 +59,7 @@ const Admin = ({
       stock: Number(newProduct.stock) || 0,
       discount: Number(newProduct.discount) || 0
     });
-    setNewProduct({ name:'', brand:'', category:'Fragrances', price:'', image:'', details:'', notes:'', features:'', stock:0, discount:0 });
+    setNewProduct({ name:'', brand:'', audience:'Men', type:'Fragrances', price:'', image:'', details:'', notes:'', features:'', stock:0, discount:0 });
     alert('Item added to the OBSIDIAN vault.');
   };
 
@@ -163,10 +162,13 @@ const Admin = ({
                 <input type="number" className={inp} placeholder="Price (Rs)" value={newProduct.price} onChange={e=>setNewProduct({...newProduct,price:e.target.value})} required />
                 <input type="number" className={inp} placeholder="Total Stock" value={newProduct.stock} onChange={e=>setNewProduct({...newProduct,stock:e.target.value})} required />
                 <input type="number" className={inp} placeholder="Discount %" value={newProduct.discount} onChange={e=>setNewProduct({...newProduct,discount:e.target.value})} />
-                <select className={inp} value={newProduct.category} onChange={e=>setNewProduct({...newProduct,category:e.target.value})}>
-                  {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                <select className={inp} value={newProduct.audience} onChange={e=>setNewProduct({...newProduct,audience:e.target.value})}>
+                  {AUDIENCES.map(a => <option key={a} value={a}>{a}</option>)}
                 </select>
-                <input className={inp} placeholder="Notes (e.g. scent notes, materials, specs)" value={newProduct.notes} onChange={e=>setNewProduct({...newProduct,notes:e.target.value})} />
+                <select className={inp} value={newProduct.type} onChange={e=>setNewProduct({...newProduct,type:e.target.value})}>
+                  {TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+                <input className={inp} placeholder="Notes (materials, scent, specs)" value={newProduct.notes} onChange={e=>setNewProduct({...newProduct,notes:e.target.value})} />
                 <input className={inp} placeholder="Features" value={newProduct.features} onChange={e=>setNewProduct({...newProduct,features:e.target.value})} />
                 <textarea className={`md:col-span-3 ${inp} h-20 resize-none`} placeholder="Description..." value={newProduct.details} onChange={e=>setNewProduct({...newProduct,details:e.target.value})} />
                 <div className="md:col-span-3"><CloudinaryUpload label="Product Image" currentImage={newProduct.image} onUpload={url=>setNewProduct({...newProduct,image:url})} /></div>
@@ -188,12 +190,11 @@ const Admin = ({
                <div className="overflow-x-auto">
                  <table className="w-full text-left text-sm whitespace-nowrap">
                    <thead className="bg-[#121212] text-[9px] uppercase tracking-widest font-bold text-neutral-500 border-b border-neutral-800">
-                     <tr><th className="p-4 md:p-6">Product</th><th className="p-4 md:p-6 text-center hidden sm:table-cell">Category</th><th className="p-4 md:p-6 text-center">Stock</th><th className="p-4 md:p-6 text-center hidden sm:table-cell">Added</th><th className="p-4 md:p-6 text-center">Status</th><th className="p-4 md:p-6 text-right">Actions</th></tr>
+                     <tr><th className="p-4 md:p-6">Product</th><th className="p-4 md:p-6 text-center hidden sm:table-cell">Audience</th><th className="p-4 md:p-6 text-center hidden sm:table-cell">Type</th><th className="p-4 md:p-6 text-center">Stock</th><th className="p-4 md:p-6 text-center">Status</th><th className="p-4 md:p-6 text-right">Actions</th></tr>
                    </thead>
                    <tbody className="divide-y divide-neutral-800">
                      {sortedInventory.map(item => {
                        const remaining = (item.stock||0)-(item.sold||0);
-                       const addedDate = item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-PK',{day:'numeric',month:'short',year:'numeric'}) : '—';
                        return (
                          <tr key={item._id} className="hover:bg-neutral-900/30">
                            <td className="p-4 md:p-6 flex items-center gap-3">
@@ -201,10 +202,12 @@ const Admin = ({
                              <div><p className="font-serif text-sm text-white">{item.name}</p><p className="text-[9px] text-neutral-500">{item.brand} | Rs. {item.price?.toLocaleString()}</p></div>
                            </td>
                            <td className="p-4 md:p-6 text-center hidden sm:table-cell">
-                             <span className="text-[8px] font-bold uppercase tracking-widest text-neutral-400 border border-neutral-800 px-2 py-1 rounded-full">{item.category}</span>
+                             <span className="text-[8px] font-bold uppercase tracking-widest text-neutral-400 border border-neutral-800 px-2 py-1 rounded-full">{item.audience}</span>
+                           </td>
+                           <td className="p-4 md:p-6 text-center hidden sm:table-cell">
+                             <span className="text-[8px] font-bold uppercase tracking-widest text-neutral-400 border border-neutral-800 px-2 py-1 rounded-full">{item.type}</span>
                            </td>
                            <td className="p-4 md:p-6 text-center"><span className="text-white font-mono">{remaining}</span><span className="text-neutral-600 text-xs"> / {item.stock}</span></td>
-                           <td className="p-4 md:p-6 text-center text-[9px] text-neutral-500 hidden sm:table-cell">{addedDate}</td>
                            <td className="p-4 md:p-6 text-center">
                              <span className={`text-[8px] font-black px-2 py-1 rounded-full uppercase border ${remaining>0?'bg-green-950/30 text-green-400 border-green-900/50':'bg-red-950/30 text-red-400 border-red-900/50'}`}>
                                {remaining>0?'Active':'Depleted'}
@@ -356,9 +359,14 @@ const Admin = ({
             <form onSubmit={handleEditSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div><label className="text-[9px] text-neutral-500 uppercase mb-1 block">Title</label><input type="text" className={inp+" w-full"} value={editingProduct.name} onChange={e=>setEditingProduct({...editingProduct,name:e.target.value})} required /></div>
               <div><label className="text-[9px] text-neutral-500 uppercase mb-1 block">Brand</label><input type="text" className={inp+" w-full"} value={editingProduct.brand} onChange={e=>setEditingProduct({...editingProduct,brand:e.target.value})} required /></div>
-              <div><label className="text-[9px] text-neutral-500 uppercase mb-1 block">Category</label>
-                <select className={inp+" w-full"} value={editingProduct.category} onChange={e=>setEditingProduct({...editingProduct,category:e.target.value})}>
-                  {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+              <div><label className="text-[9px] text-neutral-500 uppercase mb-1 block">Audience</label>
+                <select className={inp+" w-full"} value={editingProduct.audience} onChange={e=>setEditingProduct({...editingProduct,audience:e.target.value})}>
+                  {AUDIENCES.map(a => <option key={a} value={a}>{a}</option>)}
+                </select>
+              </div>
+              <div><label className="text-[9px] text-neutral-500 uppercase mb-1 block">Type</label>
+                <select className={inp+" w-full"} value={editingProduct.type} onChange={e=>setEditingProduct({...editingProduct,type:e.target.value})}>
+                  {TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
               <div><label className="text-[9px] text-neutral-500 uppercase mb-1 block">Price</label><input type="number" className={inp+" w-full"} value={editingProduct.price} onChange={e=>setEditingProduct({...editingProduct,price:e.target.value})} required /></div>

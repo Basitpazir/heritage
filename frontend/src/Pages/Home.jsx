@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const Home = ({ heroImages = [], heroZoom = 100, products = [] }) => {
@@ -6,6 +6,7 @@ const Home = ({ heroImages = [], heroZoom = 100, products = [] }) => {
   const [trackId, setTrackId] = useState('');
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+  const dropsScrollRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -26,15 +27,21 @@ const Home = ({ heroImages = [], heroZoom = 100, products = [] }) => {
     if (email) { setSubscribed(true); setEmail(''); }
   };
 
-  const saleProducts = products.filter(p => p.discount > 0).slice(0, 4);
-  const newArrivals = products.slice(0, 4);
+  const scrollDrops = (dir) => {
+    if (!dropsScrollRef.current) return;
+    dropsScrollRef.current.scrollBy({ left: dir * 340, behavior: 'smooth' });
+  };
 
+  const saleProducts = products.filter(p => p.discount > 0).slice(0, 4);
+  const newArrivals = [...products].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 8);
+
+  // Category grid — mirrors "Explore Collections" tile treatment
   const categories = [
-    { name: 'Fragrances', desc: 'The scent of obsidian', img: 'https://images.unsplash.com/photo-1541643600914-78b084683601?w=600&q=80' },
-    { name: 'Accessories', desc: 'Forged in darkness', img: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&q=80' },
-    { name: 'Apparel', desc: 'Wear the void', img: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&q=80' },
-    { name: 'Tech', desc: 'Black everything', img: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80' },
-    { name: 'Lifestyle', desc: 'Live in black', img: 'https://images.unsplash.com/photo-1596495578065-6e0763fa1178?w=600&q=80' },
+    { name: 'Fragrances', img: 'https://images.unsplash.com/photo-1541643600914-78b084683601?w=600&q=80' },
+    { name: 'Accessories', img: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&q=80' },
+    { name: 'Apparel', img: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&q=80' },
+    { name: 'Tech', img: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80' },
+    { name: 'Lifestyle', img: 'https://images.unsplash.com/photo-1596495578065-6e0763fa1178?w=600&q=80' },
   ];
 
   return (
@@ -48,36 +55,34 @@ const Home = ({ heroImages = [], heroZoom = 100, products = [] }) => {
         )) : (
           <div className="absolute inset-0 bg-gradient-to-b from-neutral-900 to-black" />
         )}
-        <div className="absolute inset-0 bg-black/50" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/50" />
 
-        <div className="relative h-full flex flex-col items-center justify-center text-center px-6">
-          <p className="text-[9px] sm:text-[10px] text-white/40 uppercase tracking-[1em] mb-8">
+        <div className="relative h-full flex flex-col items-center justify-end pb-20 sm:pb-28 text-center px-6">
+          <p className="text-[9px] sm:text-[10px] text-white/40 uppercase tracking-[1em] mb-6">
             All Black. Everything.
           </p>
-          <h1 className="text-5xl sm:text-7xl md:text-9xl font-serif text-white uppercase tracking-[0.1em] mb-4 leading-none">
-            OBSIDIAN
+
+          <h1 className="leading-[0.95] mb-10">
+            <span className="block text-6xl sm:text-8xl md:text-[9rem] font-serif text-white tracking-tight">
+              Worn in
+            </span>
+            <span className="block text-5xl sm:text-7xl md:text-8xl font-serif italic text-white/70 -mt-2 sm:-mt-4">
+              the dark
+            </span>
           </h1>
-          <p className="text-[10px] sm:text-xs text-white/40 uppercase tracking-[0.5em] mb-12">
-            The Black Lifestyle
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto px-4 sm:px-0">
-            <Link to="/products"
-              className="bg-white text-black px-10 sm:px-16 py-4 text-[10px] font-black uppercase tracking-[0.4em] hover:bg-white/90 transition-all text-center">
-              Shop Now
+
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto px-4 sm:px-0">
+            <Link to="/products?category=apparel"
+              className="border border-white/40 text-white px-12 sm:px-14 py-4 text-[10px] font-bold uppercase tracking-[0.35em] hover:bg-white hover:text-black transition-all duration-300 text-center">
+              Shop Apparel
             </Link>
             <Link to="/products?category=fragrances"
-              className="border border-white/30 text-white px-10 sm:px-16 py-4 text-[10px] font-black uppercase tracking-[0.4em] hover:border-white hover:bg-white/5 transition-all text-center">
-              Fragrances
+              className="border border-white/40 text-white px-12 sm:px-14 py-4 text-[10px] font-bold uppercase tracking-[0.35em] hover:bg-white hover:text-black transition-all duration-300 text-center">
+              Shop Fragrances
             </Link>
           </div>
         </div>
 
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 animate-bounce">
-          <div className="w-[1px] h-10 bg-gradient-to-b from-white/40 to-transparent" />
-        </div>
-
-        {/* Hero dots */}
         {heroImages.length > 1 && (
           <div className="absolute bottom-8 right-8 flex gap-2">
             {heroImages.map((_, i) => (
@@ -99,43 +104,80 @@ const Home = ({ heroImages = [], heroZoom = 100, products = [] }) => {
         </div>
       </div>
 
-      {/* ── CATEGORIES GRID ── */}
+      {/* ── EXPLORE COLLECTIONS (category tile grid) ── */}
       <section className="py-20 sm:py-32 px-4 sm:px-8 max-w-[1600px] mx-auto">
-        <div className="flex justify-between items-end mb-12 sm:mb-16">
-          <h2 className="text-2xl sm:text-4xl font-serif uppercase tracking-widest">Shop by Category</h2>
-          <Link to="/products" className="text-[9px] font-bold uppercase tracking-[0.3em] text-white/40 hover:text-white transition-colors">
-            View All →
-          </Link>
-        </div>
+        <p className="text-[9px] text-white/30 uppercase tracking-[0.6em] mb-3">The Vault</p>
+        <h2 className="text-3xl sm:text-5xl mb-12 sm:mb-16">
+          <span className="font-serif text-white">Explore </span>
+          <span className="font-serif italic text-white/50">Collections</span>
+        </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
           {categories.map((cat) => (
             <Link key={cat.name} to={`/products?category=${cat.name.toLowerCase()}`}
-              className="group relative aspect-[3/4] overflow-hidden bg-neutral-900">
-              <img src={cat.img} alt={cat.name} className="w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-105 transition-all duration-700" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+              className="group relative aspect-[3/4] overflow-hidden bg-neutral-100">
+              <img src={cat.img} alt={cat.name} className="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-all duration-700" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
-                <p className="text-[8px] text-white/50 uppercase tracking-widest mb-1">{cat.desc}</p>
-                <h3 className="text-sm sm:text-base font-serif uppercase tracking-widest text-white">{cat.name}</h3>
+                <h3 className="text-sm sm:text-base font-bold uppercase tracking-widest text-white border-b border-white/40 inline-block pb-1">
+                  {cat.name}
+                </h3>
               </div>
             </Link>
           ))}
         </div>
       </section>
 
-      {/* ── FEATURED / NEW ARRIVALS ── */}
+      {/* ── LIFESTYLE BANNER ── */}
+      <section className="relative h-[70vh] sm:h-[85vh] w-full overflow-hidden">
+        <img
+          src={heroImages[1] || heroImages[0] || 'https://images.unsplash.com/photo-1490367532201-b9bc1dc483f6?w=1600&q=80'}
+          alt="OBSIDIAN Lifestyle"
+          className="absolute inset-0 w-full h-full object-cover opacity-70"
+        />
+        <div className="absolute inset-0 bg-black/40" />
+        <div className="relative h-full flex flex-col items-center justify-center text-center px-6">
+          <p className="text-[9px] text-white/50 uppercase tracking-[0.6em] mb-4">The Essence</p>
+          <h2 className="leading-[0.95] mb-8">
+            <span className="block text-4xl sm:text-6xl md:text-7xl font-serif text-white">Shades</span>
+            <span className="block text-4xl sm:text-6xl md:text-7xl font-serif italic text-white/60 -mt-1 sm:-mt-2">of OBSIDIAN</span>
+          </h2>
+          <Link to="/products"
+            className="border border-white/50 text-white px-10 py-4 text-[10px] font-bold uppercase tracking-[0.35em] hover:bg-white hover:text-black transition-all duration-300">
+            Discover the Collection
+          </Link>
+        </div>
+      </section>
+
+      {/* ── JUST DROPPED (horizontal scroll) ── */}
       {newArrivals.length > 0 && (
-        <section className="py-20 sm:py-32 px-4 sm:px-8 max-w-[1600px] mx-auto border-t border-white/5">
-          <div className="flex justify-between items-end mb-12 sm:mb-16">
-            <h2 className="text-2xl sm:text-4xl font-serif uppercase tracking-widest">New Arrivals</h2>
-            <Link to="/products" className="text-[9px] font-bold uppercase tracking-[0.3em] text-white/40 hover:text-white transition-colors">
-              View All →
-            </Link>
+        <section className="py-20 sm:py-32 border-t border-white/5">
+          <div className="max-w-[1600px] mx-auto px-4 sm:px-8 flex justify-between items-end mb-10 sm:mb-14">
+            <div>
+              <p className="text-[9px] text-white/30 uppercase tracking-[0.6em] mb-3">New This Week</p>
+              <h2 className="text-3xl sm:text-5xl">
+                <span className="font-serif text-white">Just </span>
+                <span className="font-serif italic text-white/50">Dropped</span>
+              </h2>
+            </div>
+            <div className="hidden sm:flex items-center gap-3">
+              <Link to="/products" className="text-[9px] font-bold uppercase tracking-[0.3em] text-white/40 hover:text-white transition-colors mr-4">
+                View All →
+              </Link>
+              <button onClick={() => scrollDrops(-1)} className="w-10 h-10 border border-white/10 hover:border-white/30 flex items-center justify-center text-white/50 hover:text-white transition-all">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+              <button onClick={() => scrollDrops(1)} className="w-10 h-10 border border-white/10 hover:border-white/30 flex items-center justify-center text-white/50 hover:text-white transition-all">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+            </div>
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+
+          <div ref={dropsScrollRef} className="drops-scroll flex gap-4 sm:gap-6 overflow-x-auto px-4 sm:px-8 pb-4 snap-x snap-mandatory">
             {newArrivals.map(product => {
               const discountedPrice = product.price - (product.price * ((product.discount || 0) / 100));
               return (
-                <Link key={product._id} to={`/product/${product._id}`} className="group">
+                <Link key={product._id} to={`/product/${product._id}`}
+                  className="group flex-shrink-0 w-[220px] sm:w-[300px] snap-start">
                   <div className="relative aspect-[3/4] overflow-hidden bg-neutral-900 mb-4">
                     <img src={product.image} alt={product.name}
                       className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" />
@@ -144,15 +186,10 @@ const Home = ({ heroImages = [], heroZoom = 100, products = [] }) => {
                         -{product.discount}%
                       </div>
                     )}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-500 flex items-center justify-center">
-                      <span className="opacity-0 group-hover:opacity-100 transition-all duration-300 bg-white text-black text-[9px] font-black uppercase tracking-widest px-6 py-3 translate-y-4 group-hover:translate-y-0">
-                        View
-                      </span>
-                    </div>
                   </div>
                   <div>
                     <p className="text-[8px] text-white/30 uppercase tracking-widest mb-1">{product.brand || 'OBSIDIAN'}</p>
-                    <h3 className="text-[11px] font-bold uppercase tracking-widest text-white mb-2 leading-tight">{product.name}</h3>
+                    <h3 className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-white mb-2 leading-tight">{product.name}</h3>
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-serif text-white">Rs. {discountedPrice.toLocaleString()}</span>
                       {product.discount > 0 && <span className="text-[10px] text-white/30 line-through">Rs. {product.price.toLocaleString()}</span>}
@@ -161,6 +198,12 @@ const Home = ({ heroImages = [], heroZoom = 100, products = [] }) => {
                 </Link>
               );
             })}
+          </div>
+
+          <div className="sm:hidden px-4 mt-6">
+            <Link to="/products" className="block text-center border border-white/10 py-3 text-[9px] font-bold uppercase tracking-widest text-white/40 hover:text-white hover:border-white/30 transition-all">
+              View All New Arrivals
+            </Link>
           </div>
         </section>
       )}

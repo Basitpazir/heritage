@@ -10,12 +10,21 @@ const reviewSchema = new mongoose.Schema({
 const productSchema = new mongoose.Schema({
   name:     { type: String, required: true, trim: true },
   brand:    { type: String, required: true, trim: true },
-  // Updated categories for OBSIDIAN lifestyle brand
-  category: {
+
+  // Who it's for — drives the top-level nav (Men / Women / Unisex)
+  audience: {
     type: String,
     required: true,
-    enum: ['Fragrances', 'Accessories', 'Apparel', 'Tech', 'Lifestyle', 'Men', 'Women', 'Unisex']
+    enum: ['Men', 'Women', 'Unisex']
   },
+
+  // What it is — drives the sub-category links under each audience
+  type: {
+    type: String,
+    required: true,
+    enum: ['Fragrances', 'Accessories', 'Apparel', 'Tech', 'Lifestyle']
+  },
+
   price:    { type: Number, required: true, min: 0 },
   image:    { type: String, required: true },
   details:  { type: String, default: '' },

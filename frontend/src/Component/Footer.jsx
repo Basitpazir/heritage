@@ -19,31 +19,11 @@ const Footer = ({ storeInfo }) => {
       <div className="max-w-[1600px] mx-auto px-6 sm:px-8 lg:px-12 py-16 sm:py-20">
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-8 sm:gap-12">
 
-          {/* Brand */}
-          <div className="col-span-2 lg:col-span-2">
-            <Link to="/">
-              <h2 className="font-serif text-white uppercase tracking-[0.5em] text-xl mb-4">OBSIDIAN</h2>
-            </Link>
-            <p className="text-[10px] text-white/30 uppercase tracking-wider leading-loose max-w-xs">
-              All Black. Everything. A luxury lifestyle brand for those who live in the dark.
-            </p>
-            <div className="flex gap-4 mt-6">
-              {/* Social icons */}
-              {['instagram', 'twitter', 'tiktok'].map(s => (
-                <a key={s} href="#" className="text-white/20 hover:text-white transition-colors">
-                  <div className="w-8 h-8 border border-white/10 hover:border-white/30 flex items-center justify-center transition-colors">
-                    <span className="text-[8px] font-bold uppercase">{s[0]}</span>
-                  </div>
-                </a>
-              ))}
-            </div>
-          </div>
-
           {/* Shop */}
           <div>
             <h4 className="text-[9px] font-bold uppercase tracking-[0.4em] mb-5 text-white/40">Shop</h4>
             <ul className="space-y-3">
-              {['Fragrances', 'Accessories', 'Apparel', 'Tech', 'Lifestyle', 'Sale'].map(item => (
+              {['Fragrances', 'Accessories', 'Apparel', 'Tech', 'Lifestyle'].map(item => (
                 <li key={item}>
                   <Link to={`/products?category=${item.toLowerCase()}`}
                     className="text-[10px] uppercase tracking-[0.2em] text-white/40 hover:text-white transition-colors">
@@ -54,9 +34,9 @@ const Footer = ({ storeInfo }) => {
             </ul>
           </div>
 
-          {/* Service */}
+          {/* Help */}
           <div>
-            <h4 className="text-[9px] font-bold uppercase tracking-[0.4em] mb-5 text-white/40">Service</h4>
+            <h4 className="text-[9px] font-bold uppercase tracking-[0.4em] mb-5 text-white/40">Help</h4>
             <ul className="space-y-3">
               <li>
                 <button onClick={() => setViewingPolicy({ title: 'Shipping & Delivery', text: info.shippingPolicy })}
@@ -75,16 +55,45 @@ const Footer = ({ storeInfo }) => {
                   Track Order
                 </Link>
               </li>
+              <li>
+                <Link to="/account" className="text-[10px] uppercase tracking-[0.2em] text-white/40 hover:text-white transition-colors">
+                  My Account
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Company */}
+          <div>
+            <h4 className="text-[9px] font-bold uppercase tracking-[0.4em] mb-5 text-white/40">Company</h4>
+            <ul className="space-y-3">
+              <li><Link to="/" className="text-[10px] uppercase tracking-[0.2em] text-white/40 hover:text-white transition-colors">Home</Link></li>
+              <li><Link to="/products" className="text-[10px] uppercase tracking-[0.2em] text-white/40 hover:text-white transition-colors">Collection</Link></li>
+              <li>
+                <button onClick={() => setViewingPolicy({ title: 'About OBSIDIAN', text: 'OBSIDIAN is a black lifestyle brand for those who live in the dark. Minimalist. Powerful. Uncompromising.' })}
+                  className="text-[10px] uppercase tracking-[0.2em] text-white/40 hover:text-white transition-colors text-left">
+                  About
+                </button>
+              </li>
             </ul>
           </div>
 
           {/* Contact */}
-          <div>
+          <div className="col-span-2 lg:col-span-2">
             <h4 className="text-[9px] font-bold uppercase tracking-[0.4em] mb-5 text-white/40">Contact</h4>
-            <div className="space-y-3">
+            <div className="space-y-3 mb-6">
               <p className="text-[10px] uppercase tracking-[0.2em] text-white/60 font-bold">{info.phone}</p>
               <p className="text-[10px] tracking-widest text-white/40 break-all lowercase">{info.email}</p>
               <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">{info.address}</p>
+            </div>
+            <div className="flex gap-3">
+              {['instagram', 'twitter', 'tiktok'].map(s => (
+                <a key={s} href="#" className="text-white/20 hover:text-white transition-colors">
+                  <div className="w-8 h-8 border border-white/10 hover:border-white/30 flex items-center justify-center transition-colors">
+                    <span className="text-[8px] font-bold uppercase">{s[0]}</span>
+                  </div>
+                </a>
+              ))}
             </div>
           </div>
         </div>
@@ -93,6 +102,9 @@ const Footer = ({ storeInfo }) => {
       {/* Bottom bar */}
       <div className="border-t border-white/5 px-6 sm:px-12 py-6">
         <div className="max-w-[1600px] mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+          <Link to="/">
+            <h2 className="font-serif text-white uppercase tracking-[0.5em] text-sm">OBSIDIAN</h2>
+          </Link>
           <p className="text-[8px] text-white/20 tracking-[0.4em] uppercase">
             © 2026 OBSIDIAN — All Rights Reserved
           </p>

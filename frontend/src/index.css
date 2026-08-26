@@ -8,3 +8,21 @@
 .animate-marquee {
   animation: marquee 20s linear infinite;
 }
+
+.drops-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.drops-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
