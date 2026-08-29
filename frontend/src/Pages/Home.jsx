@@ -1,21 +1,67 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
+const API = `${import.meta.env.VITE_API_URL}/api`;
+
+// Full-bleed product tile: photo fills the entire card edge-to-edge (no background, no padding —
+// the finished branded photo IS the card). A grey/white outline traces around the tile border on
+// hover, and the image does a subtle zoom. Falls back to a plain dark card if the image fails to load.
+const CategoryTile = ({ cat, index }) => {
+  const [imgFailed, setImgFailed] = useState(false);
+
+  return (
+    <Link
+      to={`/products?type=${cat.name.toLowerCase()}`}
+      className="collection-tile group relative aspect-square rounded-2xl overflow-hidden bg-[#0a0a0a] block animate-fade-up"
+      style={{ animationDelay: `${index * 0.08}s` }}
+    >
+      {/* Full-bleed branded product photo — fills the entire card, no background gap */}
+      {!imgFailed && (
+        <img
+          src={cat.img}
+          alt={cat.name}
+          onError={() => setImgFailed(true)}
+          loading="lazy"
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+        />
+      )}
+
+      {/* Grey/white outline that traces around the card border on hover */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <rect x="1" y="1" width="98" height="98" rx="8" fill="none" stroke="white" strokeWidth="0.6"
+          className="collection-tile-trace" pathLength="100" />
+      </svg>
+
+      {/* Subtle bottom scrim so the category label stays legible over any photo */}
+      <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
+
+      {/* Label overlaid at the bottom of the card, with an underline that extends on hover */}
+      <div className="absolute bottom-4 left-0 right-0 text-center pointer-events-none">
+        <h3 className="font-display text-sm sm:text-base font-semibold text-white">
+          {cat.name}
+        </h3>
+        <span className="block mx-auto mt-1.5 h-px w-6 bg-white/40 transition-all duration-300 group-hover:w-12 group-hover:bg-white" />
+      </div>
+    </Link>
+  );
+};
+
 const Home = ({ heroImages = [], heroZoom = 100, products = [] }) => {
-  const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
   const [trackId, setTrackId] = useState('');
+  const [firstName, setFirstName] = useState('');
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+  const [blogPosts, setBlogPosts] = useState([]);
   const dropsScrollRef = useRef(null);
+  const reviewsScrollRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (heroImages.length <= 1) return;
-    const interval = setInterval(() => {
-      setCurrentHeroIndex(prev => (prev + 1) % heroImages.length);
-    }, 6000);
-    return () => clearInterval(interval);
-  }, [heroImages]);
+    fetch(`${API}/blog?limit=3`)
+      .then(r => r.json())
+      .then(data => setBlogPosts(Array.isArray(data) ? data.slice(0, 3) : []))
+      .catch(() => setBlogPosts([]));
+  }, []);
 
   const handleTrack = (e) => {
     e.preventDefault();
@@ -24,282 +70,354 @@ const Home = ({ heroImages = [], heroZoom = 100, products = [] }) => {
 
   const handleSubscribe = (e) => {
     e.preventDefault();
-    if (email) { setSubscribed(true); setEmail(''); }
+    if (email) { setSubscribed(true); setEmail(''); setFirstName(''); }
   };
 
-  const scrollDrops = (dir) => {
-    if (!dropsScrollRef.current) return;
-    dropsScrollRef.current.scrollBy({ left: dir * 340, behavior: 'smooth' });
-  };
+  const scrollDrops = () => {}; // legacy no-op, kept for prop compatibility if referenced elsewhere
 
-  const saleProducts = products.filter(p => p.discount > 0).slice(0, 4);
-  const newArrivals = [...products].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 8);
+  const newArrivals = [...products].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 6);
+  const featuredProduct = products[0];
 
-  // Category grid — mirrors "Explore Collections" tile treatment
+  // Product-only cutout images (isolated item, no background scenery) — transparent PNGs on white/black product-shot backgrounds
   const categories = [
-    { name: 'Fragrances', img: 'https://images.unsplash.com/photo-1541643600914-78b084683601?w=600&q=80' },
-    { name: 'Accessories', img: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&q=80' },
-    { name: 'Apparel', img: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&q=80' },
-    { name: 'Tech', img: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80' },
-    { name: 'Lifestyle', img: 'https://images.unsplash.com/photo-1596495578065-6e0763fa1178?w=600&q=80' },
+    { name: 'Fragrances', img: '/images/collections/fragrances.jpg' },
+    { name: 'Accessories', img: '/images/collections/accessories.jpg' },
+    { name: 'Apparel', img: '/images/collections/apparel.jpg' },
+    { name: 'Tech', img: '/images/collections/tech.jpg' },
+    { name: 'Lifestyle', img: '/images/collections/lifestyle.jpg' },
+    { name: 'Men', img: '/images/collections/men.jpg' },
+  ];
+
+  const reviews = [
+    { name: 'Ahmed K.', handle: '@ahmedk_style', text: 'The quality is unmatched. Every piece feels engineered, not just designed.' },
+    { name: 'Sara M.', handle: '@sara.m', text: 'OBSIDIAN fragrances last all day. Compliments every single time I wear them.' },
+    { name: 'Hassan R.', handle: '@hassan.r', text: 'Fast shipping, premium packaging. This is how a black-label brand should feel.' },
+    { name: 'Fatima Z.', handle: '@fatimaz', text: 'The tech accessories line is genuinely next level. Minimal, dark, functional.' },
+    { name: 'Bilal A.', handle: '@bilal.a', text: 'Ordered twice already. The apparel fits like it was tailored for me.' },
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans">
+    <div className="min-h-screen text-white font-body" style={{ backgroundColor: '#050506' }}>
 
-      {/* ── HERO ── */}
-      <div className="relative h-screen w-full overflow-hidden bg-black">
-        {heroImages.length > 0 ? heroImages.map((img, i) => (
-          <div key={i} className="absolute inset-0 transition-opacity duration-[2000ms]"
-            style={{ opacity: i === currentHeroIndex ? 1 : 0, backgroundImage: `url(${img})`, backgroundSize: 'cover', backgroundPosition: 'center', transform: `scale(${heroZoom / 100})`, transformOrigin: 'center' }} />
-        )) : (
-          <div className="absolute inset-0 bg-gradient-to-b from-neutral-900 to-black" />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/50" />
-
-        <div className="relative h-full flex flex-col items-center justify-end pb-20 sm:pb-28 text-center px-6">
-          <p className="text-[9px] sm:text-[10px] text-white/40 uppercase tracking-[1em] mb-6">
-            All Black. Everything.
-          </p>
-
-          <h1 className="leading-[0.95] mb-10">
-            <span className="block text-6xl sm:text-8xl md:text-[9rem] font-serif text-white tracking-tight">
-              Worn in
-            </span>
-            <span className="block text-5xl sm:text-7xl md:text-8xl font-serif italic text-white/70 -mt-2 sm:-mt-4">
-              the dark
-            </span>
-          </h1>
-
-          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto px-4 sm:px-0">
-            <Link to="/products?category=apparel"
-              className="border border-white/40 text-white px-12 sm:px-14 py-4 text-[10px] font-bold uppercase tracking-[0.35em] hover:bg-white hover:text-black transition-all duration-300 text-center">
-              Shop Apparel
-            </Link>
-            <Link to="/products?category=fragrances"
-              className="border border-white/40 text-white px-12 sm:px-14 py-4 text-[10px] font-bold uppercase tracking-[0.35em] hover:bg-white hover:text-black transition-all duration-300 text-center">
-              Shop Fragrances
-            </Link>
-          </div>
+      {/* ── HERO — dark, floating central card, vertical bar grid like the reference ── */}
+      <section className="relative min-h-screen w-full overflow-hidden flex items-center justify-center px-4 sm:px-8 pt-24 pb-16">
+        {/* Ambient background glow */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-[40vw] h-[40vw] rounded-full bg-white/[0.03] blur-[120px] glow-pulse" />
+          <div className="absolute bottom-1/4 right-1/4 w-[30vw] h-[30vw] rounded-full bg-white/[0.02] blur-[100px] glow-pulse" style={{ animationDelay: '2s' }} />
         </div>
 
-        {heroImages.length > 1 && (
-          <div className="absolute bottom-8 right-8 flex gap-2">
-            {heroImages.map((_, i) => (
-              <button key={i} onClick={() => setCurrentHeroIndex(i)}
-                className={`w-1 h-1 rounded-full transition-all ${i === currentHeroIndex ? 'bg-white w-6' : 'bg-white/30'}`} />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* ── MARQUEE ── */}
-      <div className="bg-white text-black py-3 overflow-hidden">
-        <div className="flex animate-marquee whitespace-nowrap">
-          {[...Array(6)].map((_, i) => (
-            <span key={i} className="text-[9px] font-black uppercase tracking-[0.5em] mx-8">
-              Fragrances · Accessories · Apparel · Tech · Lifestyle · New Arrivals ·
-            </span>
+        {/* Vertical bar grid backdrop — faint product imagery behind glass bars, with animated glowing outlines */}
+        <div className="absolute inset-0 flex items-end justify-center gap-2 sm:gap-3 px-4 sm:px-10 opacity-70">
+          {[
+            { h: 65, img: 'https://images.unsplash.com/photo-1541643600914-78b084683601?w=400&q=80&sat=-100' },
+            { h: 45, img: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=400&q=80&sat=-100' },
+            { h: 80, img: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&q=80&sat=-100' },
+            { h: 30, img: 'https://images.unsplash.com/photo-1585386959984-a4155224a1ad?w=400&q=80&sat=-100' },
+            { h: 55, img: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&q=80&sat=-100' },
+            { h: 95, img: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&q=80&sat=-100' },
+            { h: 40, img: 'https://images.unsplash.com/photo-1541643600914-78b084683601?w=400&q=80&sat=-100' },
+            { h: 70, img: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=400&q=80&sat=-100' },
+            { h: 50, img: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&q=80&sat=-100' },
+            { h: 85, img: 'https://images.unsplash.com/photo-1585386959984-a4155224a1ad?w=400&q=80&sat=-100' },
+            { h: 35, img: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&q=80&sat=-100' },
+            { h: 60, img: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&q=80&sat=-100' },
+          ].map((bar, i) => (
+            <div key={i} className="hero-bar flex-1 relative rounded-t-2xl overflow-hidden"
+              style={{ height: `${bar.h}%`, maxWidth: '90px', animationDelay: `${i * 0.3}s` }}>
+              <img src={bar.img} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                className="w-full h-full object-cover grayscale opacity-25" />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/40 to-black/80" />
+              <div className="hero-bar-outline absolute inset-0 rounded-t-2xl" />
+            </div>
           ))}
         </div>
-      </div>
 
-      {/* ── EXPLORE COLLECTIONS (category tile grid) ── */}
-      <section className="py-20 sm:py-32 px-4 sm:px-8 max-w-[1600px] mx-auto">
-        <p className="text-[9px] text-white/30 uppercase tracking-[0.6em] mb-3">The Vault</p>
-        <h2 className="text-3xl sm:text-5xl mb-12 sm:mb-16">
-          <span className="font-serif text-white">Explore </span>
-          <span className="font-serif italic text-white/50">Collections</span>
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-          {categories.map((cat) => (
-            <Link key={cat.name} to={`/products?category=${cat.name.toLowerCase()}`}
-              className="group relative aspect-[3/4] overflow-hidden bg-neutral-100">
-              <img src={cat.img} alt={cat.name} className="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-all duration-700" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
-                <h3 className="text-sm sm:text-base font-bold uppercase tracking-widest text-white border-b border-white/40 inline-block pb-1">
-                  {cat.name}
-                </h3>
-              </div>
+        {/* Central floating content card */}
+        <div className="relative z-10 max-w-2xl w-full text-center animate-fade-up">
+          <p className="font-display text-[9px] sm:text-[10px] text-white/60 uppercase tracking-[0.5em] mb-6">
+            Crafted in Darkness
+          </p>
+          <h1 className="font-display text-3xl sm:text-5xl md:text-6xl font-bold uppercase tracking-tight leading-[1.1] mb-6">
+            Built for<br />Real Life.<br /><span className="text-white/40">Not Just Style.</span>
+          </h1>
+          <p className="text-sm sm:text-base text-white/60 mb-10 max-w-md mx-auto">
+            Track your style, elevate your presence — with precision and control.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link to="/products"
+              className="bg-white text-black px-8 py-3.5 rounded-full text-xs font-bold uppercase tracking-[0.2em] hover:bg-white/90 transition-all duration-300">
+              Explore the Vault
             </Link>
+            <Link to="/products?onSale=true"
+              className="border border-white/25 text-white/80 px-8 py-3.5 rounded-full text-xs font-bold uppercase tracking-[0.2em] hover:border-white/50 hover:text-white transition-all duration-300">
+              View Outlet
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FEATURED PRODUCT CARD — glass panel style like the Logitech reference ── */}
+      {featuredProduct && (
+        <section className="px-4 sm:px-8 -mt-8 sm:-mt-16 relative z-20 pb-20">
+          <div className="max-w-5xl mx-auto rounded-[2rem] p-1 bg-gradient-to-br from-white/10 via-white/5 to-transparent animate-scale-in">
+            <div className="rounded-[1.85rem] overflow-hidden relative" style={{ backgroundColor: '#101012' }}>
+              <div className="grid grid-cols-1 md:grid-cols-3">
+                <div className="md:col-span-2 relative aspect-[16/10] md:aspect-auto">
+                  <img src={featuredProduct.image} alt={featuredProduct.name}
+                    className="w-full h-full object-cover grayscale contrast-110" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                  <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6">
+                    <p className="font-display text-lg sm:text-2xl font-bold uppercase tracking-wide text-white">{featuredProduct.name}</p>
+                  </div>
+                </div>
+                <div className="p-6 sm:p-8 flex flex-col justify-center">
+                  <p className="text-[10px] text-white/40 uppercase tracking-widest mb-2">{featuredProduct.brand || 'OBSIDIAN'}</p>
+                  <p className="text-sm text-white/60 mb-6 line-clamp-3">{featuredProduct.details || 'Precision-crafted for those who demand more from every detail.'}</p>
+                  <div className="flex items-center justify-between">
+                    <span className="font-display text-xl font-bold text-white">Rs. {featuredProduct.price?.toLocaleString()}</span>
+                    <Link to={`/product/${featuredProduct._id}`}
+                      className="w-11 h-11 rounded-full bg-white text-black flex items-center justify-center hover:scale-110 transition-transform">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── JUST DROPPED — 6 items, 3-per-row grid, centered with breathing room (not edge-to-edge) ── */}
+      {newArrivals.length > 0 && (
+        <section className="py-16 sm:py-24 border-t border-white/5">
+          <div className="max-w-5xl mx-auto px-6 sm:px-8 flex justify-between items-end mb-10">
+            <div>
+              <p className="text-[9px] text-white/40 uppercase tracking-[0.5em] mb-3">New This Week</p>
+              <h2 className="font-display text-2xl sm:text-4xl font-bold uppercase tracking-tight">Just Dropped</h2>
+            </div>
+            <Link to="/products" className="hidden sm:block text-[9px] font-bold uppercase tracking-[0.3em] text-white/50 hover:text-white transition-colors">
+              View All →
+            </Link>
+          </div>
+
+          <div className="max-w-5xl mx-auto px-6 sm:px-8 grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
+            {newArrivals.map((product, i) => {
+              const discountedPrice = product.price - (product.price * ((product.discount || 0) / 100));
+              return (
+                <div key={product._id} className="relative animate-fade-up" style={{ animationDelay: `${i * 0.08}s` }}>
+                  <Link to={`/product/${product._id}`} className="group block card-lift rounded-3xl overflow-hidden" style={{ backgroundColor: '#101012' }}>
+                    <div className="relative aspect-square overflow-hidden">
+                      <img src={product.image} alt={product.name}
+                        className="w-full h-full object-cover grayscale contrast-110 group-hover:scale-105 transition-all duration-700" />
+                      {product.discount > 0 && (
+                        <div className="absolute top-3 left-3 bg-white text-black text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">
+                          -{product.discount}%
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <p className="text-[8px] text-white/40 uppercase tracking-widest mb-1">{product.brand || 'OBSIDIAN'}</p>
+                      <h3 className="text-xs font-bold uppercase tracking-wide text-white mb-2 leading-tight">{product.name}</h3>
+                      <div className="flex items-center gap-3">
+                        <span className="font-display text-sm font-bold text-white">Rs. {discountedPrice.toLocaleString()}</span>
+                        {product.discount > 0 && <span className="text-[10px] text-white/40 line-through">Rs. {product.price.toLocaleString()}</span>}
+                      </div>
+                    </div>
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* ── EXPLORE COLLECTIONS — 6 tiles in 2 fixed rows, isolated product shots with 3D tilt + float ── */}
+      <section className="py-16 sm:py-24 px-4 sm:px-8 max-w-[1600px] mx-auto border-t border-white/5">
+        <p className="text-[9px] text-white/40 uppercase tracking-[0.5em] mb-3 animate-fade-in">The Vault</p>
+        <h2 className="font-display text-2xl sm:text-4xl font-bold uppercase tracking-tight mb-12 animate-fade-in">Explore Collections</h2>
+        <div className="grid grid-cols-3 grid-rows-2 gap-3 sm:gap-5">
+          {categories.map((cat, i) => (
+            <CategoryTile key={cat.name} cat={cat} index={i} />
           ))}
         </div>
       </section>
 
-      {/* ── LIFESTYLE BANNER ── */}
-      <section className="relative h-[70vh] sm:h-[85vh] w-full overflow-hidden">
+      {/* ── CAMPAIGN BANNER — full-bleed editorial hero, serif italic headline + CTA ── */}
+      <section className="relative h-[110vh] min-h-[480px] sm:min-h-[600px] overflow-hidden border-t border-white/5 animate-fade-in">
         <img
-          src={heroImages[1] || heroImages[0] || 'https://images.unsplash.com/photo-1490367532201-b9bc1dc483f6?w=1600&q=80'}
-          alt="OBSIDIAN Lifestyle"
-          className="absolute inset-0 w-full h-full object-cover opacity-70"
+          src="/images/collections/shadesofobsidian.png"
+          alt="Shades of OBSIDIAN"
+          className="absolute inset-0 w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-black/40" />
-        <div className="relative h-full flex flex-col items-center justify-center text-center px-6">
-          <p className="text-[9px] text-white/50 uppercase tracking-[0.6em] mb-4">The Essence</p>
-          <h2 className="leading-[0.95] mb-8">
-            <span className="block text-4xl sm:text-6xl md:text-7xl font-serif text-white">Shades</span>
-            <span className="block text-4xl sm:text-6xl md:text-7xl font-serif italic text-white/60 -mt-1 sm:-mt-2">of OBSIDIAN</span>
-          </h2>
-          <Link to="/products"
-            className="border border-white/50 text-white px-10 py-4 text-[10px] font-bold uppercase tracking-[0.35em] hover:bg-white hover:text-black transition-all duration-300">
-            Discover the Collection
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/10" />
+        <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-6">
+          <p className="text-[9px] text-white/60 uppercase tracking-[0.5em] mb-4">The Essence</p>
+          <h2 className="font-display text-4xl sm:text-6xl font-bold uppercase tracking-tight leading-none mb-1">Shades</h2>
+          <p className="font-serif italic text-3xl sm:text-5xl text-white/80 mb-8">of OBSIDIAN</p>
+          <Link to="/products" className="border border-white/60 px-8 py-3.5 text-[10px] font-bold uppercase tracking-[0.3em] text-white hover:bg-white hover:text-black transition-all">
+            Discover The Collection
           </Link>
         </div>
       </section>
 
-      {/* ── JUST DROPPED (horizontal scroll) ── */}
-      {newArrivals.length > 0 && (
-        <section className="py-20 sm:py-32 border-t border-white/5">
-          <div className="max-w-[1600px] mx-auto px-4 sm:px-8 flex justify-between items-end mb-10 sm:mb-14">
-            <div>
-              <p className="text-[9px] text-white/30 uppercase tracking-[0.6em] mb-3">New This Week</p>
-              <h2 className="text-3xl sm:text-5xl">
-                <span className="font-serif text-white">Just </span>
-                <span className="font-serif italic text-white/50">Dropped</span>
-              </h2>
+      {/* ── FEATURED EDITORIAL — journal-style 3-card promo grid ── */}
+      <section className="py-16 sm:py-24 px-4 sm:px-8 max-w-[1600px] mx-auto border-t border-white/5">
+        <div className="flex justify-between items-end mb-12">
+          <div>
+            <p className="text-[9px] text-white/40 uppercase tracking-[0.5em] mb-3 animate-fade-in">The Journal</p>
+            <h2 className="font-display text-2xl sm:text-4xl font-bold uppercase tracking-tight animate-fade-in">Latest Stories</h2>
+          </div>
+          <Link to="/blog" className="text-[9px] font-bold uppercase tracking-[0.3em] text-white/50 hover:text-white transition-colors">
+            All Articles →
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[
+            {
+              title: 'How to Build the Perfect All-Black Wardrobe',
+              excerpt: 'Monochrome dressing looks effortless but rarely is. Here\'s how to layer textures, tones, and silhouettes so an all-black fit reads as intentional, not flat.',
+              img: '/images/collections/blog1.jpg',
+            },
+            {
+              title: 'Inside the OBSIDIAN Design Language',
+              excerpt: 'Every stitch, silhouette, and finish follows the same rule: restraint over noise. A look at the principles behind how we design.',
+              img: '/images/collections/blog2.jpg',
+            },
+            {
+              title: 'The Art of Wearing Less, Better',
+              excerpt: 'A smaller wardrobe of higher quality pieces beats a closet full of compromises. Why fewer, sharper choices are the real luxury.',
+              img: '/images/collections/blog3.jpg',
+            },
+          ].map((story, i) => (
+            <div key={story.title} className="group rounded-3xl overflow-hidden card-lift animate-fade-up" style={{ backgroundColor: '#101012', animationDelay: `${i * 0.1}s` }}>
+              <div className="aspect-[4/3] overflow-hidden">
+                <img src={story.img} alt={story.title} className="w-full h-full object-cover grayscale group-hover:scale-105 transition-all duration-700" />
+              </div>
+              <div className="p-5">
+                <h3 className="text-base font-bold text-white mb-2 leading-snug">{story.title}</h3>
+                <p className="text-sm text-white/50 leading-relaxed line-clamp-2">{story.excerpt}</p>
+              </div>
             </div>
-            <div className="hidden sm:flex items-center gap-3">
-              <Link to="/products" className="text-[9px] font-bold uppercase tracking-[0.3em] text-white/40 hover:text-white transition-colors mr-4">
-                View All →
+          ))}
+        </div>
+      </section>
+
+      {/* ── REVIEWS — dual-column scrolling testimonial layout ── */}
+      <section className="py-16 sm:py-24 border-t border-white/5 rounded-t-[3rem] sm:rounded-t-[4rem]" style={{ backgroundColor: '#101012' }}>
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-8 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+          <div className="animate-slide-in-left">
+            <h2 className="font-display text-2xl sm:text-4xl font-bold uppercase tracking-tight leading-tight mb-4">
+              Don't take our word for it, look at their results
+            </h2>
+            <p className="text-sm text-white/50 mb-8">
+              Scroll through to see how OBSIDIAN fits into their everyday.
+            </p>
+            <Link to="/products" className="inline-flex items-center gap-2 bg-white text-black px-6 py-3 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-white/90 transition-all">
+              Start Shopping
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </Link>
+            <div className="flex items-center gap-6 mt-10">
+              <div>
+                <p className="text-[9px] text-white/40 uppercase tracking-widest mb-1">Reviews</p>
+                <p className="font-display text-2xl font-bold text-white">500+</p>
+              </div>
+              <div className="w-px h-10 bg-white/10" />
+              <div>
+                <p className="text-[9px] text-white/40 uppercase tracking-widest mb-1">Rated Excellent</p>
+                <p className="text-sm text-white">★★★★★ 5/5</p>
+              </div>
+            </div>
+          </div>
+
+          <div ref={reviewsScrollRef} className="flex flex-col gap-4 max-h-[280px] overflow-y-auto pr-2 scrollbar-hide animate-slide-in-right">
+            {reviews.map((r, i) => (
+              <div key={i} className="rounded-2xl p-5 border border-white/10" style={{ backgroundColor: '#050506' }}>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center font-display text-xs font-bold">{r.name[0]}</div>
+                  <div>
+                    <p className="text-sm font-bold text-white leading-tight">{r.name}</p>
+                    <p className="text-[10px] text-white/40">{r.handle}</p>
+                  </div>
+                </div>
+                <p className="text-sm text-white/60 leading-relaxed">{r.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── BLOG POSTS ── */}
+      {blogPosts.length > 0 && (
+        <section className="py-16 sm:py-24 px-4 sm:px-8 max-w-[1600px] mx-auto border-t border-white/5">
+          <div className="flex justify-between items-end mb-12">
+            <div>
+              <p className="text-[9px] text-white/40 uppercase tracking-[0.5em] mb-3">The Journal</p>
+              <h2 className="font-display text-2xl sm:text-4xl font-bold uppercase tracking-tight">Latest Posts</h2>
+            </div>
+            <Link to="/blog" className="text-[9px] font-bold uppercase tracking-[0.3em] text-white/50 hover:text-white transition-colors">
+              All Articles →
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {blogPosts.map((post, i) => (
+              <Link key={post._id} to={`/blog/${post.slug}`} className="group rounded-3xl overflow-hidden card-lift animate-fade-up" style={{ backgroundColor: '#101012', animationDelay: `${i * 0.1}s` }}>
+                <div className="aspect-[4/3] overflow-hidden">
+                  <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover grayscale group-hover:scale-105 transition-all duration-700" />
+                </div>
+                <div className="p-5">
+                  <h3 className="text-base font-bold text-white mb-2 leading-snug group-hover:underline">{post.title}</h3>
+                  <p className="text-sm text-white/50 leading-relaxed line-clamp-2">{post.excerpt}</p>
+                </div>
               </Link>
-              <button onClick={() => scrollDrops(-1)} className="w-10 h-10 border border-white/10 hover:border-white/30 flex items-center justify-center text-white/50 hover:text-white transition-all">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M15 18l-6-6 6-6"/></svg>
-              </button>
-              <button onClick={() => scrollDrops(1)} className="w-10 h-10 border border-white/10 hover:border-white/30 flex items-center justify-center text-white/50 hover:text-white transition-all">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M9 18l6-6-6-6"/></svg>
-              </button>
-            </div>
-          </div>
-
-          <div ref={dropsScrollRef} className="drops-scroll flex gap-4 sm:gap-6 overflow-x-auto px-4 sm:px-8 pb-4 snap-x snap-mandatory">
-            {newArrivals.map(product => {
-              const discountedPrice = product.price - (product.price * ((product.discount || 0) / 100));
-              return (
-                <Link key={product._id} to={`/product/${product._id}`}
-                  className="group flex-shrink-0 w-[220px] sm:w-[300px] snap-start">
-                  <div className="relative aspect-[3/4] overflow-hidden bg-neutral-900 mb-4">
-                    <img src={product.image} alt={product.name}
-                      className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" />
-                    {product.discount > 0 && (
-                      <div className="absolute top-3 left-3 bg-white text-black text-[8px] font-black uppercase tracking-widest px-2 py-1">
-                        -{product.discount}%
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-[8px] text-white/30 uppercase tracking-widest mb-1">{product.brand || 'OBSIDIAN'}</p>
-                    <h3 className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-white mb-2 leading-tight">{product.name}</h3>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-serif text-white">Rs. {discountedPrice.toLocaleString()}</span>
-                      {product.discount > 0 && <span className="text-[10px] text-white/30 line-through">Rs. {product.price.toLocaleString()}</span>}
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-
-          <div className="sm:hidden px-4 mt-6">
-            <Link to="/products" className="block text-center border border-white/10 py-3 text-[9px] font-bold uppercase tracking-widest text-white/40 hover:text-white hover:border-white/30 transition-all">
-              View All New Arrivals
-            </Link>
+            ))}
           </div>
         </section>
       )}
 
-      {/* ── SALE VAULT ── */}
-      {saleProducts.length > 0 && (
-        <section className="py-20 sm:py-32 px-4 sm:px-8 max-w-[1600px] mx-auto border-t border-white/5">
-          <div className="flex justify-between items-end mb-12 sm:mb-16">
-            <div>
-              <p className="text-[9px] text-white/30 uppercase tracking-[0.5em] mb-3">Limited Time</p>
-              <h2 className="text-2xl sm:text-4xl font-serif uppercase tracking-widest">Sale</h2>
-            </div>
-            <Link to="/products" className="text-[9px] font-bold uppercase tracking-[0.3em] text-white/40 hover:text-white transition-colors">
-              View All →
-            </Link>
+      {/* ── SIGNUP — rounded card, glow accent ── */}
+      <section className="py-16 sm:py-24 px-4 sm:px-8 border-t border-white/5">
+        <div className="max-w-4xl mx-auto rounded-[2rem] p-8 sm:p-14 text-center relative overflow-hidden animate-scale-in" style={{ backgroundColor: '#101012' }}>
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 rounded-full bg-white/[0.04] blur-[80px] glow-pulse" />
+          <div className="relative z-10">
+            <p className="text-[9px] text-white/40 uppercase tracking-[0.5em] mb-4">Join the Vault</p>
+            <h2 className="font-display text-2xl sm:text-4xl font-bold uppercase tracking-tight mb-4">Get 10% Off Your First Order</h2>
+            <p className="text-sm text-white/50 mb-8 max-w-md mx-auto">
+              Exclusive early access to drops, restocks, and members-only offers. No spam. Just black.
+            </p>
+            {!subscribed ? (
+              <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+                <input type="email" placeholder="Email address" value={email} onChange={(e) => setEmail(e.target.value)} required
+                  className="flex-grow bg-white/5 border border-white/15 rounded-full px-6 py-3.5 text-sm outline-none focus:border-white/40 text-white placeholder:text-white/30" />
+                <button type="submit" className="relative overflow-hidden bg-white text-black px-8 py-3.5 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-white/90 transition-all whitespace-nowrap">
+                  <span className="relative z-10">Subscribe</span>
+                  <span className="absolute inset-0 animate-shimmer" />
+                </button>
+              </form>
+            ) : (
+              <p className="text-sm text-white/70">Welcome to the inner circle. Check your email for your code.</p>
+            )}
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {saleProducts.map(product => {
-              const discountedPrice = product.price - (product.price * (product.discount / 100));
-              return (
-                <Link key={product._id} to={`/product/${product._id}`} className="group">
-                  <div className="relative aspect-[3/4] overflow-hidden bg-neutral-900 mb-4">
-                    <img src={product.image} alt={product.name}
-                      className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" />
-                    <div className="absolute top-3 left-3 bg-white text-black text-[8px] font-black uppercase tracking-widest px-2 py-1">
-                      -{product.discount}%
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-[8px] text-white/30 uppercase tracking-widest mb-1">{product.brand || 'OBSIDIAN'}</p>
-                    <h3 className="text-[11px] font-bold uppercase tracking-widest text-white mb-2">{product.name}</h3>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-serif text-white">Rs. {discountedPrice.toLocaleString()}</span>
-                      <span className="text-[10px] text-white/30 line-through">Rs. {product.price.toLocaleString()}</span>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* ── BRAND STATEMENT ── */}
-      <section className="py-24 sm:py-40 px-6 text-center border-t border-white/5">
-        <p className="text-[9px] text-white/30 uppercase tracking-[0.8em] mb-8">The Philosophy</p>
-        <h2 className="text-3xl sm:text-5xl md:text-7xl font-serif uppercase tracking-wider leading-tight max-w-5xl mx-auto text-white/90">
-          All Black. <br />Everything.
-        </h2>
-        <p className="text-xs sm:text-sm text-white/30 uppercase tracking-[0.3em] max-w-xl mx-auto mt-8 leading-loose">
-          OBSIDIAN is more than a brand. It is a way of life. Minimalist. Powerful. Uncompromising.
-        </p>
-        <Link to="/products" className="inline-block mt-12 border border-white/20 text-white px-12 py-4 text-[10px] font-black uppercase tracking-[0.4em] hover:bg-white hover:text-black transition-all duration-300">
-          Explore The Collection
-        </Link>
+        </div>
       </section>
 
       {/* ── TRACK ORDER ── */}
-      <section className="py-16 border-t border-white/5 px-6">
-        <div className="max-w-xl mx-auto">
-          <form onSubmit={handleTrack} className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start sm:items-center">
+      <section className="py-14 border-t border-white/5 px-4 sm:px-8">
+        <div className="max-w-xl mx-auto rounded-2xl p-6 border border-white/10" style={{ backgroundColor: '#101012' }}>
+          <form onSubmit={handleTrack} className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
             <div className="flex-shrink-0">
-              <p className="text-[9px] font-black uppercase tracking-[0.4em] text-white">Track Order</p>
-              <p className="text-[8px] uppercase tracking-widest text-white/30 mt-1">Enter reference ID</p>
+              <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white">Track Order</p>
             </div>
             <div className="relative flex-grow w-full">
               <input type="text" placeholder="ORD-123456789"
-                className="w-full bg-transparent border-b border-white/10 p-3 text-[11px] outline-none focus:border-white/40 uppercase tracking-[0.2em] transition-colors text-white placeholder:text-white/20"
+                className="w-full bg-transparent border-b border-white/15 py-2 text-sm outline-none focus:border-white/40 text-white placeholder:text-white/25"
                 value={trackId} onChange={(e) => setTrackId(e.target.value)} />
-              <button type="submit" className="absolute right-0 bottom-3 text-white/30 hover:text-white transition-colors">
+              <button type="submit" className="absolute right-0 bottom-2 text-white/40 hover:text-white transition-colors">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
               </button>
             </div>
           </form>
         </div>
-      </section>
-
-      {/* ── NEWSLETTER ── */}
-      <section className="py-24 sm:py-32 px-6 border-t border-white/5 text-center">
-        <p className="text-[9px] text-white/30 uppercase tracking-[0.8em] mb-6">Inner Circle</p>
-        <h3 className="text-2xl sm:text-4xl font-serif uppercase tracking-widest mb-4 text-white">Join OBSIDIAN</h3>
-        <p className="text-[10px] text-white/30 uppercase tracking-[0.3em] mb-10 leading-loose max-w-md mx-auto">
-          Early access. Exclusive drops. The darkest lifestyle.
-        </p>
-        {!subscribed ? (
-          <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-0 max-w-md mx-auto">
-            <input type="email" placeholder="Your email" value={email} onChange={(e) => setEmail(e.target.value)} required
-              className="flex-grow bg-white/5 border border-white/10 px-6 py-4 text-[10px] uppercase tracking-widest outline-none focus:border-white/30 text-white placeholder:text-white/20"
-            />
-            <button type="submit" className="bg-white text-black px-8 py-4 text-[10px] font-black uppercase tracking-[0.3em] hover:bg-white/90 transition-all">
-              Join
-            </button>
-          </form>
-        ) : (
-          <p className="text-[10px] text-white/40 uppercase tracking-widest">Welcome to the inner circle.</p>
-        )}
       </section>
 
     </div>

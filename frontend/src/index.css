@@ -1,28 +1,180 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --obsidian-black: #050506;
+  --obsidian-panel: #101012;
+  --obsidian-panel-alt: #16161a;
+  --obsidian-border: rgba(255,255,255,0.08);
+}
+
+body {
+  background-color: var(--obsidian-black);
+  font-family: 'Rajdhani', sans-serif;
+}
+
+.font-display {
+  font-family: 'Orbitron', sans-serif;
+}
+
+.font-body {
+  font-family: 'Rajdhani', sans-serif;
+}
 
 @keyframes marquee {
   0% { transform: translateX(0%); }
   100% { transform: translateX(-50%); }
 }
-
 .animate-marquee {
   animation: marquee 20s linear infinite;
 }
 
-.drops-scroll {
+.drops-scroll, .scrollbar-hide {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
-
-.drops-scroll::-webkit-scrollbar {
+.drops-scroll::-webkit-scrollbar, .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
 
-.scrollbar-hide {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+/* Soft ambient glow used behind hero/product imagery for the tech aesthetic */
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.85; }
+}
+.glow-pulse {
+  animation: glow-pulse 4s ease-in-out infinite;
 }
 
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
+/* Fade-up entrance animation for sections as they're built */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
 }
+.animate-fade-up {
+  animation: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Hero bars: animated glowing outline sweep ── */
+.hero-bar {
+  border: 1px solid rgba(255,255,255,0.1);
+  animation: hero-bar-glow 4s ease-in-out infinite;
+}
+@keyframes hero-bar-glow {
+  0%, 100% { border-color: rgba(255,255,255,0.08); }
+  50% { border-color: rgba(255,255,255,0.35); }
+}
+.hero-bar-outline {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(#000,#000) padding-box,
+    conic-gradient(from var(--angle, 0deg), transparent 0%, rgba(255,255,255,0.9) 8%, transparent 18%) border-box;
+  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.7;
+  animation: hero-bar-rotate 5s linear infinite;
+}
+@keyframes hero-bar-rotate {
+  0% { --angle: 0deg; }
+  100% { --angle: 360deg; }
+}
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+.card-lift {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+}
+.card-lift:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 60px -15px rgba(0,0,0,0.6);
+}
+
+/* ── 3D tilt + float for collection/product imagery ── */
+.tilt-3d {
+  perspective: 1000px;
+}
+.tilt-3d-inner {
+  transition: transform 0.15s ease-out;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+@keyframes float-3d {
+  0%, 100% { transform: translateY(0) rotateX(0deg) rotateY(0deg); }
+  25% { transform: translateY(-6px) rotateX(2deg) rotateY(-3deg); }
+  50% { transform: translateY(0) rotateX(0deg) rotateY(0deg); }
+  75% { transform: translateY(6px) rotateX(-2deg) rotateY(3deg); }
+}
+.animate-float-3d {
+  animation: float-3d 6s ease-in-out infinite;
+  transform-style: preserve-3d;
+}
+
+/* Depth shadow that breathes under floating objects */
+@keyframes shadow-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.35; }
+  50% { transform: scale(0.85); opacity: 0.2; }
+}
+.animate-shadow-pulse {
+  animation: shadow-pulse 6s ease-in-out infinite;
+}
+
+/* ── Scroll-reveal fade variants for the general animation pass ── */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fade-in {
+  animation: fade-in 0.9s ease both;
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-scale-in {
+  animation: scale-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.animate-slide-in-left {
+  animation: slide-in-left 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.animate-slide-in-right {
+  animation: slide-in-right 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Shimmer sweep for buttons/badges */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-shimmer {
+  background: linear-gradient(110deg, transparent 40%, rgba(255,255,255,0.15) 50%, transparent 60%);
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+/* ── Collection tile hover: outline traces around the border ── */
+.collection-tile-trace {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  opacity: 0;
+  transition: stroke-dashoffset 0.6s cubic-bezier(0.65,0,0.35,1), opacity 0.2s ease;
+}
+.collection-tile:hover .collection-tile-trace {
+  stroke-dashoffset: 0;
+  opacity: 1;
+}
+

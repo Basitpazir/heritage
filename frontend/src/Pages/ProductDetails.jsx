@@ -14,10 +14,22 @@ const ProductDetails = ({ addToCart }) => {
   const [showReviewForm, setShowReviewForm] = useState(false);
 
   useEffect(() => {
+    setLoading(true);
+    setProduct(null);
     fetch(`${API}/products/${id}`)
-      .then(r => r.json())
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`Request failed (${r.status})`);
+        const data = await r.json();
+        // Guard against a malformed/incomplete response (e.g. an error object
+        // that still parses as JSON) — only accept it if it actually looks
+        // like a product, so we never render Rs. NaN / a blank image.
+        if (!data || typeof data !== 'object' || !data._id || typeof data.price !== 'number') {
+          throw new Error('Malformed product response');
+        }
+        return data;
+      })
       .then(data => { setProduct(data); setLoading(false); })
-      .catch(() => setLoading(false));
+      .catch(() => { setProduct(null); setLoading(false); });
     window.scrollTo(0, 0);
   }, [id]);
 
@@ -28,8 +40,14 @@ const ProductDetails = ({ addToCart }) => {
   );
 
   if (!product) return (
-    <div className="min-h-screen bg-black flex items-center justify-center">
-      <p className="text-[10px] uppercase tracking-widest text-white/20">Product not found.</p>
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-4 px-6 text-center">
+      <p className="text-[10px] uppercase tracking-widest text-white/30">Product not found.</p>
+      <p className="text-[9px] uppercase tracking-widest text-white/15 max-w-sm">
+        This item may be unavailable right now, or the store isn't fully connected yet.
+      </p>
+      <Link to="/products" className="mt-2 border border-white/15 text-white/50 hover:text-white hover:border-white/40 px-5 py-2.5 text-[9px] font-bold uppercase tracking-widest transition-all">
+        Back to Collection
+      </Link>
     </div>
   );
 
