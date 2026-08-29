@@ -17,6 +17,9 @@ const app = express();
 // Added a wildcard check and explicit Vercel support
 const allowedOrigins = [
   'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5175',
+  'http://localhost:5273',
   'https://heritage-six-delta.vercel.app',
   'https://heritage-frontend-gamma.vercel.app',
   'https://heritage-frontend-nnxykces8-basitpazirs-projects.vercel.app'
@@ -26,10 +29,10 @@ app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps)
     if (!origin) return callback(null, true);
-    
+
     // Check if origin is in the list OR if it's a vercel.app subdomain
     const isAllowed = allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app');
-    
+
     if (isAllowed) {
       callback(null, true);
     } else {
@@ -58,9 +61,9 @@ app.use(session({
   secret: process.env.JWT_SECRET || 'secret_placeholder',
   resave: false,
   saveUninitialized: false,
-  proxy: true, 
+  proxy: true,
   cookie: {
-    secure: true, 
+    secure: true,
     sameSite: 'none',
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
@@ -68,6 +71,50 @@ app.use(session({
 
 app.use(passport.initialize());
 app.use(passport.session());
+
+// ─── Database connection (serverless-safe) ─────────────────────────────────
+// On Vercel, this whole module can be re-invoked on every cold start. Without
+// caching, each cold start opened a brand new mongoose.connect() and exported
+// `app` immediately — before the connection promise resolved — so the first
+// query on a fresh instance would sit in Mongoose's command buffer waiting on
+// a connection that hadn't finished handshaking yet, and time out after 10s.
+//
+// The fix: cache the connection promise on the global object (survives across
+// invocations on a warm instance) and gate every request behind it, so a
+// request never reaches a route handler before the DB is actually connected.
+let cachedConnection = global._mongooseConnection;
+
+if (!cachedConnection) {
+  mongoose.set('bufferCommands', false); // fail fast instead of buffering silently for 10s
+  cachedConnection = global._mongooseConnection = mongoose
+    .connect(process.env.MONGO_URI, {
+      serverSelectionTimeoutMS: 8000,
+      maxPoolSize: 10,
+    })
+    .then((conn) => {
+      console.log('✅ MongoDB Atlas connected');
+      return conn;
+    })
+    .catch((err) => {
+      console.error('❌ MongoDB connection failed:', err.message);
+      // Reset the cache on failure so the NEXT request retries the connection
+      // instead of being stuck reusing a rejected promise forever.
+      global._mongooseConnection = null;
+      throw err;
+    });
+}
+
+// Gate all /api routes behind the connection being ready. If the DB isn't
+// connected yet, wait for it here (once) instead of letting Mongoose buffer
+// the query inside the route handler and silently time out later.
+app.use('/api', async (req, res, next) => {
+  try {
+    await cachedConnection;
+    next();
+  } catch (err) {
+    res.status(503).json({ error: 'Database connection unavailable. Please try again.' });
+  }
+});
 
 // ─── Routes ────────────────────────────────────────────────────────────────
 app.use('/api/auth',     require('./routes/auth'));
@@ -86,17 +133,17 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' });
 });
 
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log('✅ MongoDB Atlas connected');
-    const PORT = process.env.PORT || 5000;
-    // Vercel handles the listening, so we only listen locally
-    if (process.env.NODE_ENV !== 'production') {
-        app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
-    }
-  })
-  .catch(err => {
-    console.error('❌ MongoDB connection failed:', err.message);
-  });
+// Local dev only — Vercel handles invocation of the exported app directly and
+// never calls app.listen(), so this block is skipped in production.
+if (process.env.NODE_ENV !== 'production') {
+  cachedConnection
+    .then(() => {
+      const PORT = process.env.PORT || 5000;
+      app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+    })
+    .catch(() => {
+      // connection error already logged above
+    });
+}
 
 module.exports = app;
