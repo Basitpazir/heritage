@@ -123,6 +123,7 @@ app.use('/api/products', require('./routes/products'));
 app.use('/api/orders',   require('./routes/orders'));
 app.use('/api/cart',     require('./routes/cart'));
 app.use('/api/settings', require('./routes/settings'));
+app.use('/api/blog',     require('./routes/blog'));
 
 app.get('/', (req, res) => {
   res.json({ message: '🌸 Heritage Perfume API is running' });
