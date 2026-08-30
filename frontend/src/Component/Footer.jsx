@@ -21,6 +21,79 @@ const SocialIcon = ({ name }) => {
   }
 };
 
+const SOCIALS = [
+  { key: 'x', label: 'X', href: 'https://obsidian.com/x' },
+  { key: 'facebook', label: 'Facebook', href: 'https://obsidian.com/facebook' },
+  { key: 'youtube', label: 'YouTube', href: 'https://obsidian.com/youtube' },
+  { key: 'pinterest', label: 'Pinterest', href: 'https://obsidian.com/pinterest' },
+  { key: 'instagram', label: 'Instagram', href: 'https://obsidian.com/instagram' },
+  { key: 'tiktok', label: 'TikTok', href: 'https://obsidian.com/tiktok' },
+];
+
+// Simplified continent-dot world map. Coordinates are hand-placed in a 1000x500
+// viewBox (equirectangular-ish) to trace recognizable continent silhouettes as a
+// scatter of dots -- a common, license-free way to depict "world map" in premium
+// dark UIs without importing a heavy precision GeoJSON/SVG dataset.
+const WORLD_DOTS = [
+  // North America
+  [120,120],[135,115],[150,112],[165,118],[145,130],[130,140],[150,150],[165,145],[180,140],[170,160],
+  [155,170],[140,175],[125,165],[110,150],[100,135],[190,155],[200,170],[185,180],[170,190],[195,195],
+  // South America
+  [220,240],[228,255],[235,270],[240,290],[235,310],[228,330],[220,350],[215,370],[210,390],[225,260],
+  [215,280],[230,300],[218,320],[208,340],
+  // Europe
+  [470,100],[480,95],[495,98],[505,105],[490,110],[475,115],[510,95],[460,105],[500,120],[485,125],
+  // Africa
+  [480,180],[490,200],[500,220],[495,240],[485,260],[475,280],[465,300],[470,320],[480,340],[460,200],
+  [455,220],[450,240],[500,190],[510,210],[505,230],[490,290],[475,250],[465,270],
+  // Middle East
+  [530,150],[540,160],[520,165],[535,175],
+  // Asia
+  [580,110],[600,105],[620,110],[640,120],[660,115],[680,125],[700,135],[720,130],[610,130],[630,140],
+  [650,145],[670,140],[590,150],[605,160],[625,165],[645,160],[665,170],[685,155],[705,150],[720,160],
+  [740,140],[760,135],[600,180],[620,190],[640,185],[660,195],[680,180],
+  // Southeast Asia / Indonesia
+  [680,240],[700,250],[720,245],[690,260],[710,270],[730,255],
+  // Australia
+  [790,320],[810,315],[830,325],[800,335],[820,340],[840,330],[850,345],[795,345],
+  // UK/Iceland
+  [455,80],[460,90],[440,60],
+  // Japan
+  [770,150],[775,160],[772,140],
+];
+
+const HEADQUARTERS = { x: 555, y: 175, label: 'Pakistan' };
+
+const WorldMapBackdrop = () => (
+  <div className="absolute inset-0 overflow-hidden pointer-events-none footer-map-lines">
+    <svg
+      className="absolute inset-0 w-full h-full"
+      viewBox="0 0 1000 450"
+      preserveAspectRatio="xMidYMid slice"
+      fill="none"
+    >
+      {WORLD_DOTS.map(([x, y], i) => (
+        <circle
+          key={i}
+          cx={x}
+          cy={y}
+          r="2.2"
+          fill="white"
+          className="map-dot"
+          style={{ animationDelay: `${(i % 24) * 0.18}s`, opacity: 0.09 }}
+        />
+      ))}
+      {/* Highlight OBSIDIAN's home base with a stronger, more visible pulse */}
+      <circle cx={HEADQUARTERS.x} cy={HEADQUARTERS.y} r="4" fill="white" className="map-hq-dot" />
+      <circle cx={HEADQUARTERS.x} cy={HEADQUARTERS.y} r="9" stroke="white" strokeWidth="1" fill="none" className="map-hq-ring" />
+      <circle cx={HEADQUARTERS.x} cy={HEADQUARTERS.y} r="9" stroke="white" strokeWidth="1" fill="none" className="map-hq-ring map-hq-ring-delay" />
+    </svg>
+
+    {/* Traveling scan sweep — a soft diagonal glow band that periodically passes over the whole map */}
+    <div className="map-scan-sweep absolute inset-0" />
+  </div>
+);
+
 const Footer = ({ storeInfo }) => {
   const [viewingPolicy, setViewingPolicy] = useState(null);
 
@@ -33,13 +106,16 @@ const Footer = ({ storeInfo }) => {
   };
 
   return (
-    <footer className="bg-black border-t border-white/10 text-white">
-      <div className="max-w-[1600px] mx-auto px-6 sm:px-8 lg:px-12 py-16 sm:py-20">
+    <footer className="footer-map relative overflow-hidden border-t border-white/10 text-white" style={{ backgroundColor: '#050506' }}>
+
+      <WorldMapBackdrop />
+
+      <div className="relative z-10 max-w-[1600px] mx-auto px-6 sm:px-8 lg:px-12 py-16 sm:py-20">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10 sm:gap-12">
 
           {/* Collections */}
-          <div>
-            <h4 className="text-sm font-bold text-white mb-5">Collections</h4>
+          <div className="animate-fade-up" style={{ animationDelay: '0s' }}>
+            <h4 className="font-display text-[11px] font-bold uppercase tracking-[0.25em] text-white mb-5">Collections</h4>
             <ul className="space-y-3.5">
               {[
                 { label: 'Men', to: '/products?audience=men' },
@@ -50,60 +126,102 @@ const Footer = ({ storeInfo }) => {
                 { label: 'Collabs', to: '/products' },
               ].map(item => (
                 <li key={item.label}>
-                  <Link to={item.to} className="text-sm text-white/60 hover:text-white transition-colors">{item.label}</Link>
+                  <Link to={item.to} className="footer-link group text-sm text-white/55 hover:text-white transition-colors duration-300 inline-flex items-center gap-0">
+                    <span className="footer-link-bar inline-block h-px w-0 bg-white group-hover:w-3 transition-all duration-300 ease-out" />
+                    <span className="group-hover:translate-x-1.5 transition-transform duration-300 ease-out">{item.label}</span>
+                  </Link>
                 </li>
               ))}
             </ul>
           </div>
 
           {/* Information */}
-          <div>
-            <h4 className="text-sm font-bold text-white mb-5">Information</h4>
+          <div className="animate-fade-up" style={{ animationDelay: '0.08s' }}>
+            <h4 className="font-display text-[11px] font-bold uppercase tracking-[0.25em] text-white mb-5">Information</h4>
             <ul className="space-y-3.5">
               <li>
                 <button onClick={() => setViewingPolicy({ title: 'Returns Policy', text: info.returnPolicy })}
-                  className="text-sm text-white/60 hover:text-white transition-colors text-left">Returns</button>
+                  className="footer-link group text-sm text-white/55 hover:text-white transition-colors duration-300 text-left inline-flex items-center gap-0">
+                  <span className="footer-link-bar inline-block h-px w-0 bg-white group-hover:w-3 transition-all duration-300 ease-out" />
+                  <span className="group-hover:translate-x-1.5 transition-transform duration-300 ease-out">Returns</span>
+                </button>
               </li>
               <li>
                 <button onClick={() => setViewingPolicy({ title: 'Shipping & Delivery', text: info.shippingPolicy })}
-                  className="text-sm text-white/60 hover:text-white transition-colors text-left">Shipping</button>
+                  className="footer-link group text-sm text-white/55 hover:text-white transition-colors duration-300 text-left inline-flex items-center gap-0">
+                  <span className="footer-link-bar inline-block h-px w-0 bg-white group-hover:w-3 transition-all duration-300 ease-out" />
+                  <span className="group-hover:translate-x-1.5 transition-transform duration-300 ease-out">Shipping</span>
+                </button>
               </li>
-              <li><Link to="/track-order" className="text-sm text-white/60 hover:text-white transition-colors">Track Order</Link></li>
-              <li><Link to="/account" className="text-sm text-white/60 hover:text-white transition-colors">Customer Account</Link></li>
+              <li>
+                <Link to="/track-order" className="footer-link group text-sm text-white/55 hover:text-white transition-colors duration-300 inline-flex items-center gap-0">
+                  <span className="footer-link-bar inline-block h-px w-0 bg-white group-hover:w-3 transition-all duration-300 ease-out" />
+                  <span className="group-hover:translate-x-1.5 transition-transform duration-300 ease-out">Track Order</span>
+                </Link>
+              </li>
+              <li>
+                <Link to="/account" className="footer-link group text-sm text-white/55 hover:text-white transition-colors duration-300 inline-flex items-center gap-0">
+                  <span className="footer-link-bar inline-block h-px w-0 bg-white group-hover:w-3 transition-all duration-300 ease-out" />
+                  <span className="group-hover:translate-x-1.5 transition-transform duration-300 ease-out">Customer Account</span>
+                </Link>
+              </li>
             </ul>
           </div>
 
           {/* More */}
-          <div>
-            <h4 className="text-sm font-bold text-white mb-5">More</h4>
+          <div className="animate-fade-up" style={{ animationDelay: '0.16s' }}>
+            <h4 className="font-display text-[11px] font-bold uppercase tracking-[0.25em] text-white mb-5">More</h4>
             <ul className="space-y-3.5">
-              <li><Link to="/blog" className="text-sm text-white/60 hover:text-white transition-colors">Blog</Link></li>
+              <li>
+                <Link to="/blog" className="footer-link group text-sm text-white/55 hover:text-white transition-colors duration-300 inline-flex items-center gap-0">
+                  <span className="footer-link-bar inline-block h-px w-0 bg-white group-hover:w-3 transition-all duration-300 ease-out" />
+                  <span className="group-hover:translate-x-1.5 transition-transform duration-300 ease-out">Blog</span>
+                </Link>
+              </li>
               <li>
                 <button onClick={() => setViewingPolicy({ title: 'About OBSIDIAN', text: 'OBSIDIAN is a black lifestyle brand for those who live in the dark. Minimalist. Powerful. Uncompromising.' })}
-                  className="text-sm text-white/60 hover:text-white transition-colors text-left">About</button>
+                  className="footer-link group text-sm text-white/55 hover:text-white transition-colors duration-300 text-left inline-flex items-center gap-0">
+                  <span className="footer-link-bar inline-block h-px w-0 bg-white group-hover:w-3 transition-all duration-300 ease-out" />
+                  <span className="group-hover:translate-x-1.5 transition-transform duration-300 ease-out">About</span>
+                </button>
               </li>
-              <li><Link to="/" className="text-sm text-white/60 hover:text-white transition-colors">Home</Link></li>
-              <li><Link to="/products" className="text-sm text-white/60 hover:text-white transition-colors">Shop All</Link></li>
+              <li>
+                <Link to="/" className="footer-link group text-sm text-white/55 hover:text-white transition-colors duration-300 inline-flex items-center gap-0">
+                  <span className="footer-link-bar inline-block h-px w-0 bg-white group-hover:w-3 transition-all duration-300 ease-out" />
+                  <span className="group-hover:translate-x-1.5 transition-transform duration-300 ease-out">Home</span>
+                </Link>
+              </li>
+              <li>
+                <Link to="/products" className="footer-link group text-sm text-white/55 hover:text-white transition-colors duration-300 inline-flex items-center gap-0">
+                  <span className="footer-link-bar inline-block h-px w-0 bg-white group-hover:w-3 transition-all duration-300 ease-out" />
+                  <span className="group-hover:translate-x-1.5 transition-transform duration-300 ease-out">Shop All</span>
+                </Link>
+              </li>
             </ul>
           </div>
 
           {/* Follow us */}
-          <div>
-            <h4 className="text-sm font-bold text-white mb-5">Follow us</h4>
+          <div className="animate-fade-up" style={{ animationDelay: '0.24s' }}>
+            <h4 className="font-display text-[11px] font-bold uppercase tracking-[0.25em] text-white mb-5">Follow Us</h4>
             <ul className="space-y-3.5">
-              {['x', 'facebook', 'youtube', 'pinterest', 'instagram', 'tiktok'].map(s => (
-                <li key={s} className="flex items-center gap-3">
-                  <span className="text-white/60"><SocialIcon name={s} /></span>
-                  <a href="#" className="text-sm text-white/60 hover:text-white transition-colors capitalize">{s === 'x' ? 'X' : s}</a>
+              {SOCIALS.map(s => (
+                <li key={s.key}>
+                  <a href={s.href} target="_blank" rel="noopener noreferrer"
+                    className="footer-social-link group flex items-center gap-3 text-sm text-white/55 hover:text-white transition-colors duration-300">
+                    <span className="footer-social-icon flex items-center justify-center w-7 h-7 rounded-full border border-white/15 text-white/55 group-hover:text-black group-hover:bg-white group-hover:border-white transition-all duration-300 ease-out">
+                      <SocialIcon name={s.key} />
+                    </span>
+                    <span className="group-hover:translate-x-1 transition-transform duration-300 ease-out">{s.label}</span>
+                  </a>
                 </li>
               ))}
             </ul>
           </div>
         </div>
 
-        <div className="mt-14 pt-8 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-white/60">{info.phone} · {info.email}</p>
-          <p className="text-sm text-white/40">© 2026 OBSIDIAN — All Rights Reserved</p>
+        <div className="mt-14 pt-8 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4 animate-fade-up" style={{ animationDelay: '0.32s' }}>
+          <p className="text-sm text-white/50">{info.phone} · {info.email}</p>
+          <p className="font-display text-[10px] tracking-[0.15em] text-white/30">© 2026 OBSIDIAN — All Rights Reserved</p>
         </div>
       </div>
 

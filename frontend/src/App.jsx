@@ -15,6 +15,8 @@ import ProductDetails from "./Pages/ProductDetails.jsx";
 import CustomerAccount from "./Pages/CustomerAccount.jsx";
 import TrackOrder from "./Pages/TrackOrder.jsx";
 import GoogleAuthSuccess from "./Pages/GoogleAuthSuccess.jsx";
+import Blog from "./Pages/Blog.jsx";
+import BlogPost from "./Pages/BlogPost.jsx";
 
 // Use environment variable for Vercel compatibility
 const API_BASE = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/$/, '') : 'http://localhost:5000';
@@ -129,7 +131,9 @@ function App() {
           <Route path="/cart" element={<ProtectedRoute><Cart cart={cart} removeFromCart={removeFromCart} placeOrder={placeOrder} /></ProtectedRoute>} />
           <Route path="/account" element={<ProtectedRoute><CustomerAccount /></ProtectedRoute>} />
           <Route path="/track-order" element={<ProtectedRoute><TrackOrder /></ProtectedRoute>} />
-
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:slug" element={<BlogPost />} />
+          
           <Route path="/admin" element={
             adminToken
               ? <Admin

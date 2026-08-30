@@ -58,7 +58,7 @@ const Products = () => {
   }, [location.search]);
 
   const filteredProducts = products.filter(product => {
-    const matchesAudience = audienceFilter === 'All' || (product.audience || '').toLowerCase() === audienceFilter.toLowerCase();
+    const matchesAudience = audienceFilter === 'All' || (product.category || '').toLowerCase() === audienceFilter.toLowerCase();
     const matchesType = typeFilter === 'All' || (product.type || '').toLowerCase() === typeFilter.toLowerCase();
     const matchesSale = !onSaleOnly || (product.discount || 0) > 0;
     const matchesSearch =
