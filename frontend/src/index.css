@@ -37,6 +37,7 @@ body {
   display: none;
 }
 
+/* Soft ambient glow used behind hero/product imagery for the tech aesthetic */
 @keyframes glow-pulse {
   0%, 100% { opacity: 0.5; }
   50% { opacity: 0.85; }
@@ -45,6 +46,7 @@ body {
   animation: glow-pulse 4s ease-in-out infinite;
 }
 
+/* Fade-up entrance animation for sections as they're built */
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(24px); }
   to { opacity: 1; transform: translateY(0); }
@@ -53,6 +55,7 @@ body {
   animation: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* ── Hero bars: animated glowing outline sweep ── */
 .hero-bar {
   border: 1px solid rgba(255,255,255,0.1);
   animation: hero-bar-glow 4s ease-in-out infinite;
@@ -89,6 +92,7 @@ body {
   box-shadow: 0 20px 60px -15px rgba(0,0,0,0.6);
 }
 
+/* ── 3D tilt + float for collection/product imagery ── */
 .tilt-3d {
   perspective: 1000px;
 }
@@ -109,6 +113,7 @@ body {
   transform-style: preserve-3d;
 }
 
+/* Depth shadow that breathes under floating objects */
 @keyframes shadow-pulse {
   0%, 100% { transform: scale(1); opacity: 0.35; }
   50% { transform: scale(0.85); opacity: 0.2; }
@@ -117,6 +122,7 @@ body {
   animation: shadow-pulse 6s ease-in-out infinite;
 }
 
+/* ── Scroll-reveal fade variants for the general animation pass ── */
 @keyframes fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -149,6 +155,7 @@ body {
   animation: slide-in-right 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* Shimmer sweep for buttons/badges */
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
@@ -159,6 +166,7 @@ body {
   animation: shimmer 3s ease-in-out infinite;
 }
 
+/* ── Collection tile hover: outline traces around the border ── */
 .collection-tile-trace {
   stroke-dasharray: 100;
   stroke-dashoffset: 100;
@@ -170,54 +178,56 @@ body {
   opacity: 1;
 }
 
-/* ── Footer world map: staggered dot pulse, HQ marker rings, traveling scan sweep ── */
-.footer-map-lines {
-  transition: opacity 0.6s ease;
+/* ── Footer real Pakistan map: ash-grey provinces, each pops on hover ── */
+.pakistan-map {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
 }
-.footer-map:hover .footer-map-lines {
-  opacity: 1;
-}
-
-@keyframes map-dot-pulse {
-  0%, 100% { opacity: 0.09; }
-  50% { opacity: 0.35; }
-}
-.map-dot {
-  animation: map-dot-pulse 3.5s ease-in-out infinite;
-}
-
-@keyframes map-hq-pulse {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 1; }
-}
-.map-hq-dot {
-  animation: map-hq-pulse 2.2s ease-in-out infinite;
-  transform-origin: center;
-}
-
-@keyframes map-hq-ring-expand {
-  0% { transform: scale(1); opacity: 0.7; stroke-width: 1.5; }
-  100% { transform: scale(2.4); opacity: 0; stroke-width: 0.3; }
-}
-.map-hq-ring {
-  animation: map-hq-ring-expand 2.8s ease-out infinite;
-  transform-origin: center;
+.pakistan-province {
+  fill: rgba(255,255,255,0.09);
+  stroke: rgba(255,255,255,0.22);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  transition: fill 0.35s cubic-bezier(0.16,1,0.3,1), stroke 0.35s ease, filter 0.35s ease, transform 0.35s cubic-bezier(0.16,1,0.3,1);
   transform-box: fill-box;
+  transform-origin: center;
+  cursor: pointer;
 }
-.map-hq-ring-delay {
-  animation-delay: 1.4s;
+.pakistan-province:hover,
+.pakistan-province[data-hovered="true"] {
+  fill: rgba(255,255,255,0.42);
+  stroke: rgba(255,255,255,0.75);
+  filter: drop-shadow(0 0 18px rgba(255,255,255,0.35));
+  transform: scale(1.03);
 }
 
-@keyframes map-scan-sweep-move {
-  0% { transform: translateX(-60%) translateY(-30%) rotate(20deg); opacity: 0; }
-  10% { opacity: 0.5; }
-  50% { opacity: 0.5; }
-  90% { opacity: 0; }
-  100% { transform: translateX(160%) translateY(30%) rotate(20deg); opacity: 0; }
+/* ── Campaign-style cinematic panel: rotating light sweep + pulsing glow ring +
+   breathing headline glow. Used by Home's campaign banner and now Login/Signup's
+   right-side panel — defined here as real keyframes since these were previously
+   only referenced as inline animation names with no matching @keyframes. ── */
+@keyframes campaign-sweep {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
-.map-scan-sweep {
-  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 45%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.06) 55%, transparent 100%);
-  width: 40%;
-  height: 200%;
-  animation: map-scan-sweep-move 9s ease-in-out infinite;
+@keyframes campaign-glow-pulse {
+  0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+}
+@keyframes campaign-glow-breathe {
+  0%, 100% { text-shadow: 0 0 20px rgba(255,255,255,0.25); }
+  50% { text-shadow: 0 0 55px rgba(255,255,255,0.55), 0 0 90px rgba(255,255,255,0.2); }
+}
+.campaign-glow-text {
+  animation: campaign-glow-breathe 3.5s 1.2s ease-in-out infinite;
+}
+
+/* ── Auth (Login/Signup) page: single glass card over a full-bleed image
+   background. Form content swaps instantly with the URL-driven mode (no
+   sliding/turning wrapper — that approach was fragile and caused a one-frame
+   flash before snapping to the wrong panel). The glass-card class just gives
+   a subtle scale-in on first mount. */
+.glass-card {
+  animation: fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }

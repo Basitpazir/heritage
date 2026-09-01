@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import PakistanMap from './PakistanMap.jsx';
 
 const SocialIcon = ({ name }) => {
   const common = { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'currentColor' };
@@ -30,70 +31,6 @@ const SOCIALS = [
   { key: 'tiktok', label: 'TikTok', href: 'https://obsidian.com/tiktok' },
 ];
 
-// Simplified continent-dot world map. Coordinates are hand-placed in a 1000x500
-// viewBox (equirectangular-ish) to trace recognizable continent silhouettes as a
-// scatter of dots -- a common, license-free way to depict "world map" in premium
-// dark UIs without importing a heavy precision GeoJSON/SVG dataset.
-const WORLD_DOTS = [
-  // North America
-  [120,120],[135,115],[150,112],[165,118],[145,130],[130,140],[150,150],[165,145],[180,140],[170,160],
-  [155,170],[140,175],[125,165],[110,150],[100,135],[190,155],[200,170],[185,180],[170,190],[195,195],
-  // South America
-  [220,240],[228,255],[235,270],[240,290],[235,310],[228,330],[220,350],[215,370],[210,390],[225,260],
-  [215,280],[230,300],[218,320],[208,340],
-  // Europe
-  [470,100],[480,95],[495,98],[505,105],[490,110],[475,115],[510,95],[460,105],[500,120],[485,125],
-  // Africa
-  [480,180],[490,200],[500,220],[495,240],[485,260],[475,280],[465,300],[470,320],[480,340],[460,200],
-  [455,220],[450,240],[500,190],[510,210],[505,230],[490,290],[475,250],[465,270],
-  // Middle East
-  [530,150],[540,160],[520,165],[535,175],
-  // Asia
-  [580,110],[600,105],[620,110],[640,120],[660,115],[680,125],[700,135],[720,130],[610,130],[630,140],
-  [650,145],[670,140],[590,150],[605,160],[625,165],[645,160],[665,170],[685,155],[705,150],[720,160],
-  [740,140],[760,135],[600,180],[620,190],[640,185],[660,195],[680,180],
-  // Southeast Asia / Indonesia
-  [680,240],[700,250],[720,245],[690,260],[710,270],[730,255],
-  // Australia
-  [790,320],[810,315],[830,325],[800,335],[820,340],[840,330],[850,345],[795,345],
-  // UK/Iceland
-  [455,80],[460,90],[440,60],
-  // Japan
-  [770,150],[775,160],[772,140],
-];
-
-const HEADQUARTERS = { x: 555, y: 175, label: 'Pakistan' };
-
-const WorldMapBackdrop = () => (
-  <div className="absolute inset-0 overflow-hidden pointer-events-none footer-map-lines">
-    <svg
-      className="absolute inset-0 w-full h-full"
-      viewBox="0 0 1000 450"
-      preserveAspectRatio="xMidYMid slice"
-      fill="none"
-    >
-      {WORLD_DOTS.map(([x, y], i) => (
-        <circle
-          key={i}
-          cx={x}
-          cy={y}
-          r="2.2"
-          fill="white"
-          className="map-dot"
-          style={{ animationDelay: `${(i % 24) * 0.18}s`, opacity: 0.09 }}
-        />
-      ))}
-      {/* Highlight OBSIDIAN's home base with a stronger, more visible pulse */}
-      <circle cx={HEADQUARTERS.x} cy={HEADQUARTERS.y} r="4" fill="white" className="map-hq-dot" />
-      <circle cx={HEADQUARTERS.x} cy={HEADQUARTERS.y} r="9" stroke="white" strokeWidth="1" fill="none" className="map-hq-ring" />
-      <circle cx={HEADQUARTERS.x} cy={HEADQUARTERS.y} r="9" stroke="white" strokeWidth="1" fill="none" className="map-hq-ring map-hq-ring-delay" />
-    </svg>
-
-    {/* Traveling scan sweep — a soft diagonal glow band that periodically passes over the whole map */}
-    <div className="map-scan-sweep absolute inset-0" />
-  </div>
-);
-
 const Footer = ({ storeInfo }) => {
   const [viewingPolicy, setViewingPolicy] = useState(null);
 
@@ -108,10 +45,11 @@ const Footer = ({ storeInfo }) => {
   return (
     <footer className="footer-map relative overflow-hidden border-t border-white/10 text-white" style={{ backgroundColor: '#050506' }}>
 
-      <WorldMapBackdrop />
-
       <div className="relative z-10 max-w-[1600px] mx-auto px-6 sm:px-8 lg:px-12 py-16 sm:py-20">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-10 sm:gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-14 lg:gap-16 items-center">
+
+          {/* Links — 4 columns within the left zone */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-10 sm:gap-12">
 
           {/* Collections */}
           <div className="animate-fade-up" style={{ animationDelay: '0s' }}>
@@ -216,6 +154,17 @@ const Footer = ({ storeInfo }) => {
                 </li>
               ))}
             </ul>
+          </div>
+
+          </div>
+          {/* end links sub-grid */}
+
+          {/* Pakistan map — large dedicated zone, not squeezed into the links grid. Each
+              province highlights individually on hover (see PakistanMap.jsx / .pakistan-province CSS). */}
+          <div className="flex justify-center lg:justify-end animate-fade-up" style={{ animationDelay: '0.3s' }}>
+            <div className="w-full max-w-[440px] lg:max-w-none">
+              <PakistanMap />
+            </div>
           </div>
         </div>
 

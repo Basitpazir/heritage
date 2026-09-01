@@ -6,8 +6,7 @@ import Footer from "./Component/Footer.jsx";
 import ProtectedRoute from "./Component/ProtectedRoute.jsx";
 import Home from "./Pages/Home.jsx";
 import Products from "./Pages/Products.jsx";
-import Login from "./Pages/Login.jsx";
-import Signup from "./Pages/Signup.jsx";
+import Auth from "./Pages/Auth.jsx";
 import Cart from "./Pages/Cart.jsx";
 import Admin from "./Pages/Admin.jsx";
 import AdminAuth from "./Pages/AdminAuth.jsx";
@@ -27,11 +26,15 @@ const storedAdminToken = localStorage.getItem('adminToken');
 const Layout = ({ children, cartCount, storeInfo }) => {
   const location = useLocation();
   const isAdminPage = location.pathname.startsWith('/admin');
+  // Auth page (login/signup) has its own minimal top bar (just the
+  // wordmark) and no footer — the full site chrome would clutter it.
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
+  const hideChrome = isAdminPage || isAuthPage;
   return (
     <div className="flex flex-col min-h-screen">
-      {!isAdminPage && <Navbar cartCount={cartCount} storeInfo={storeInfo} />}
+      {!hideChrome && <Navbar cartCount={cartCount} storeInfo={storeInfo} />}
       <main className="flex-grow">{children}</main>
-      {!isAdminPage && <Footer storeInfo={storeInfo} />}
+      {!hideChrome && <Footer storeInfo={storeInfo} />}
     </div>
   );
 };
@@ -120,9 +123,12 @@ function App() {
       <Layout cartCount={cart.length} storeInfo={storeInfo}>
         <Routes>
           <Route path="/" element={<Home heroImages={heroImages} heroZoom={heroZoom} products={products} />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          
+
+          {/* Unified auth: one component renders both forms and animates
+              between them, rather than separate Login/Signup pages. */}
+          <Route path="/login" element={<Auth />} />
+          <Route path="/signup" element={<Auth />} />
+
           {/* FIXED: Changed from /google-auth-success to /auth/google/success so it perfectly matches the backend redirect */}
           <Route path="/auth/google/success" element={<GoogleAuthSuccess />} />
 
@@ -133,7 +139,7 @@ function App() {
           <Route path="/track-order" element={<ProtectedRoute><TrackOrder /></ProtectedRoute>} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
-          
+
           <Route path="/admin" element={
             adminToken
               ? <Admin
