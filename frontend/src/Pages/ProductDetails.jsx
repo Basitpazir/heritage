@@ -12,10 +12,12 @@ const ProductDetails = ({ addToCart }) => {
   const [hover, setHover] = useState(0);
   const [newReview, setNewReview] = useState({ user: '', email: '', comment: '' });
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const [activeImage, setActiveImage] = useState(0);
 
   useEffect(() => {
     setLoading(true);
     setProduct(null);
+    setActiveImage(0);
     fetch(`${API}/products/${id}`)
       .then(async (r) => {
         if (!r.ok) throw new Error(`Request failed (${r.status})`);
@@ -57,6 +59,8 @@ const ProductDetails = ({ addToCart }) => {
 
   const discountedPrice = product.price - (product.price * ((product.discount || 0) / 100));
   const remaining = (product.stock || 0) - (product.sold || 0);
+  const gallery = product.images?.length > 0 ? product.images : (product.image ? [product.image] : []);
+  const activeSrc = gallery[activeImage] || gallery[0];
 
   const handlePostReview = async (e) => {
     e.preventDefault();
@@ -95,11 +99,26 @@ const ProductDetails = ({ addToCart }) => {
       <div className="max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12 grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-16 py-10 sm:py-16">
 
         {/* Image */}
-        <div className="relative aspect-[3/4] bg-neutral-900 overflow-hidden max-w-sm mx-auto w-full lg:max-w-none">
-          <img src={product.image} className="w-full h-full object-cover" alt={product.name} />
-          {product.discount > 0 && (
-            <div className="absolute top-4 left-4 bg-white text-black text-[9px] font-black uppercase tracking-widest px-3 py-1.5">
-              -{product.discount}%
+        <div className="max-w-sm mx-auto w-full lg:max-w-none">
+          <div className="relative aspect-[3/4] bg-neutral-900 overflow-hidden">
+            <img src={activeSrc} className="w-full h-full object-cover" alt={product.name} />
+            {product.discount > 0 && (
+              <div className="absolute top-4 left-4 bg-white text-black text-[9px] font-black uppercase tracking-widest px-3 py-1.5">
+                -{product.discount}%
+              </div>
+            )}
+          </div>
+
+          {gallery.length > 1 && (
+            <div className="flex gap-2 sm:gap-3 mt-3 sm:mt-4 overflow-x-auto scrollbar-hide">
+              {gallery.map((img, i) => (
+                <button key={i} onClick={() => setActiveImage(i)}
+                  className={`relative flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 overflow-hidden border transition-all duration-200 ${
+                    activeImage === i ? 'border-white' : 'border-white/10 opacity-60 hover:opacity-100 hover:border-white/30'
+                  }`}>
+                  <img src={img} className="w-full h-full object-cover" alt={`${product.name} ${i + 1}`} />
+                </button>
+              ))}
             </div>
           )}
         </div>

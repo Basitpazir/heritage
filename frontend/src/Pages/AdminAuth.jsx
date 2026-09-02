@@ -65,49 +65,52 @@ const AdminAuth = ({ onAdminLogin }) => {
     }
   };
 
+  const inp = "w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 outline-none text-white text-sm focus:border-white/30 transition-colors placeholder:text-white/25";
+
   if (adminExists === null && !errorMsg) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-[10px] uppercase tracking-widest text-stone-400 animate-pulse">Connecting to Heritage Vault...</p>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#050506' }}>
+        <p className="text-[10px] uppercase tracking-[0.4em] text-white/30 animate-pulse font-display">Connecting to OBSIDIAN Vault...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 flex items-center justify-center p-6">
-      <div className="max-w-md w-full bg-white p-10 shadow-sm border border-stone-200 text-center">
-        <h2 className="text-3xl font-serif text-stone-900 mb-2 uppercase tracking-widest">
+    <div className="min-h-screen flex items-center justify-center p-6 font-body" style={{ backgroundColor: '#050506' }}>
+      <div className="max-w-md w-full rounded-2xl border border-white/10 p-8 sm:p-10 text-center" style={{ backgroundColor: '#0a0a0b' }}>
+        <p className="text-[9px] text-white/35 uppercase tracking-[0.4em] mb-3 font-display">OBSIDIAN</p>
+        <h2 className="text-2xl sm:text-3xl font-display font-bold text-white mb-2 uppercase tracking-widest">
           {adminExists ? 'Admin Login' : 'Create Admin Account'}
         </h2>
-        <p className="text-[10px] text-stone-400 uppercase tracking-widest mb-8">
+        <p className="text-[9px] text-white/35 uppercase tracking-widest mb-8">
           {adminExists ? 'Secure Portal' : 'No admin detected. Register yourself as the master admin.'}
         </p>
 
         {errorMsg && (
-          <div className="mb-6 border border-red-100 bg-red-50 py-3 px-4">
-            <p className="text-red-800 text-[9px] uppercase tracking-widest font-black">{errorMsg}</p>
+          <div className="mb-6 border border-red-500/20 bg-red-500/10 rounded-xl py-3 px-4">
+            <p className="text-red-400 text-[9px] uppercase tracking-widest font-black">{errorMsg}</p>
           </div>
         )}
 
-        <form onSubmit={handleAuth} className="space-y-6 text-left">
+        <form onSubmit={handleAuth} className="space-y-5 text-left">
           {!adminExists && (
             <div>
-              <label className="block text-[10px] uppercase tracking-widest text-stone-400 font-bold mb-2">Full Name</label>
-              <input type="text" className="w-full border-b border-stone-200 py-2 outline-none focus:border-stone-900"
+              <label className="block text-[9px] uppercase tracking-widest text-white/40 font-bold mb-2">Full Name</label>
+              <input type="text" className={inp}
                 placeholder="e.g. Basit Pazir" value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
           )}
           <div>
-            <label className="block text-[10px] uppercase tracking-widest text-stone-400 font-bold mb-2">Email Address</label>
-            <input type="email" className="w-full border-b border-stone-200 py-2 outline-none focus:border-stone-900"
-              placeholder="admin@heritage.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <label className="block text-[9px] uppercase tracking-widest text-white/40 font-bold mb-2">Email Address</label>
+            <input type="email" className={inp}
+              placeholder="admin@obsidian.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
           <div>
-            <label className="block text-[10px] uppercase tracking-widest text-stone-400 font-bold mb-2">Password</label>
-            <input type="password" className="w-full border-b border-stone-200 py-2 outline-none focus:border-stone-900"
+            <label className="block text-[9px] uppercase tracking-widest text-white/40 font-bold mb-2">Password</label>
+            <input type="password" className={inp}
               placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
-          <button type="submit" className="w-full bg-stone-900 text-white py-4 uppercase tracking-[0.3em] text-[11px] hover:bg-black transition-all">
+          <button type="submit" className="w-full bg-white text-black py-4 rounded-full uppercase tracking-[0.3em] text-[10px] font-bold hover:bg-white/90 transition-all font-display">
             {adminExists ? 'Verify & Enter' : 'Initialize Admin'}
           </button>
         </form>

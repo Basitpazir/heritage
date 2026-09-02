@@ -31,7 +31,6 @@ const NAV_SECTIONS = [
   {
     label: 'Store',
     items: [
-      { key: 'design', label: 'Design', icon: 'image' },
       { key: 'settings', label: 'Settings', icon: 'gear' },
     ],
   },
@@ -45,7 +44,6 @@ const NavIcon = ({ name }) => {
     case 'box': return <svg {...common}><path d="M21 8l-9-5-9 5 9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>;
     case 'doc': return <svg {...common}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></svg>;
     case 'bag': return <svg {...common}><path d="M6 8L7.5 3h9L18 8"/><rect x="4" y="8" width="16" height="13" rx="2.5"/></svg>;
-    case 'image': return <svg {...common}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>;
     case 'gear': return <svg {...common}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>;
     default: return null;
   }
@@ -75,6 +73,62 @@ const Sparkline = ({ data, color = '#ffffff' }) => {
   );
 };
 
+// Multi-image gallery uploader — wraps the existing single-image
+// CloudinaryUpload component and manages an ordered array of URLs.
+// No minimum required; caps at `max` (8) images. The first image in the
+// array is treated as the primary/cover image everywhere in the app.
+const MAX_PRODUCT_IMAGES = 8;
+
+const ImageGalleryUpload = ({ images = [], onChange, max = MAX_PRODUCT_IMAGES }) => {
+  const removeAt = (idx) => onChange(images.filter((_, i) => i !== idx));
+  const moveToFront = (idx) => {
+    if (idx === 0) return;
+    const next = [...images];
+    const [item] = next.splice(idx, 1);
+    next.unshift(item);
+    onChange(next);
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <label className="text-[9px] text-white/40 uppercase tracking-widest block">Product Images</label>
+        <span className="text-[8px] text-white/25 uppercase tracking-widest">{images.length} / {max}</span>
+      </div>
+
+      {images.length > 0 && (
+        <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 mb-3">
+          {images.map((img, i) => (
+            <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-white/10 bg-white/[0.03] group">
+              <img src={img} className="w-full h-full object-cover" alt="" />
+              {i === 0 && (
+                <span className="absolute bottom-1 left-1 bg-white/90 text-black text-[6px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full">Cover</span>
+              )}
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
+                {i !== 0 && (
+                  <button type="button" onClick={() => moveToFront(i)} title="Set as cover"
+                    className="bg-white/90 text-black rounded-full w-6 h-6 flex items-center justify-center text-[10px] hover:bg-white">★</button>
+                )}
+                <button type="button" onClick={() => removeAt(i)} title="Remove"
+                  className="bg-red-500/90 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-500">×</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {images.length < max ? (
+        <CloudinaryUpload
+          label={images.length === 0 ? 'Upload Product Images' : 'Add Another Image'}
+          onUpload={url => { if (url) onChange([...images, url]); }}
+        />
+      ) : (
+        <p className="text-[8px] text-white/25 uppercase tracking-widest">Maximum of {max} images reached.</p>
+      )}
+    </div>
+  );
+};
+
 // Build a simple day-bucketed series from a list of items with createdAt/date
 // and a value extractor — used to derive real (not fake) trend lines from
 // the actual orders/products data already available to this component.
@@ -99,7 +153,6 @@ const buildDailySeries = (items, dateKey, valueFn, days = 14) => {
 const Admin = ({
   products = [], orders = [], setOrders,
   addProduct, updateProduct, deleteProduct, setIsAdminLoggedIn,
-  heroImages = [], setHeroImages, heroZoom = 100, setHeroZoom,
   storeInfo = {}, setStoreInfo, adminToken
 }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -112,7 +165,7 @@ const Admin = ({
   const [editingProduct, setEditingProduct] = useState(null);
   const [viewingInsights, setViewingInsights] = useState(null);
   const [savingSettings, setSavingSettings] = useState(false);
-  const [newProduct, setNewProduct] = useState({ name: '', brand: '', audience: 'Men', type: 'Fragrances', price: '', image: '', details: '', notes: '', features: '', stock: 0, discount: 0 });
+  const [newProduct, setNewProduct] = useState({ name: '', brand: '', audience: 'Men', type: 'Fragrances', price: '', images: [], details: '', notes: '', features: '', stock: 0, discount: 0 });
 
   // ── Blog state ──
   const [blogPosts, setBlogPosts] = useState([]);
@@ -215,28 +268,43 @@ const Admin = ({
     return 0;
   });
 
-  const handleSubmit = (e) => {
+  const [savingProduct, setSavingProduct] = useState(false);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!newProduct.image) { alert('Please upload a product image.'); return; }
-    addProduct({
+    if (savingProduct) return;
+    setSavingProduct(true);
+    const result = await addProduct({
       ...newProduct,
       price: Number(newProduct.price),
       stock: Number(newProduct.stock) || 0,
       discount: Number(newProduct.discount) || 0
     });
-    setNewProduct({ name:'', brand:'', audience:'Men', type:'Fragrances', price:'', image:'', details:'', notes:'', features:'', stock:0, discount:0 });
-    alert('Item added to the OBSIDIAN vault.');
+    setSavingProduct(false);
+    if (result?.ok) {
+      setNewProduct({ name:'', brand:'', audience:'Men', type:'Fragrances', price:'', images:[], details:'', notes:'', features:'', stock:0, discount:0 });
+      alert('Item added to the OBSIDIAN vault.');
+    } else {
+      alert(result?.error || 'Failed to add product. Please try again.');
+    }
   };
 
-  const handleEditSubmit = (e) => {
+  const handleEditSubmit = async (e) => {
     e.preventDefault();
-    updateProduct(editingProduct._id, {
+    if (savingProduct) return;
+    setSavingProduct(true);
+    const result = await updateProduct(editingProduct._id, {
       ...editingProduct,
       price: Number(editingProduct.price),
       stock: Number(editingProduct.stock),
       discount: Number(editingProduct.discount) || 0
     });
-    setEditingProduct(null);
+    setSavingProduct(false);
+    if (result?.ok) {
+      setEditingProduct(null);
+    } else {
+      alert(result?.error || 'Failed to update product. Please try again.');
+    }
   };
 
   const updateOrderStatus = async (orderId, newStatus) => {
@@ -433,8 +501,8 @@ const Admin = ({
                   <input className={inp} placeholder="Notes (materials, scent, specs)" value={newProduct.notes} onChange={e=>setNewProduct({...newProduct,notes:e.target.value})} />
                   <input className={inp} placeholder="Features" value={newProduct.features} onChange={e=>setNewProduct({...newProduct,features:e.target.value})} />
                   <textarea className={`md:col-span-3 ${inp} h-20 resize-none`} placeholder="Description..." value={newProduct.details} onChange={e=>setNewProduct({...newProduct,details:e.target.value})} />
-                  <div className="md:col-span-3"><CloudinaryUpload label="Product Image" currentImage={newProduct.image} onUpload={url=>setNewProduct({...newProduct,image:url})} /></div>
-                  <button type="submit" className="md:col-span-3 bg-white text-black py-4 rounded-full uppercase tracking-[0.3em] text-[10px] font-bold hover:bg-white/90 transition-colors font-display">Publish to OBSIDIAN</button>
+                  <div className="md:col-span-3"><ImageGalleryUpload images={newProduct.images} onChange={imgs=>setNewProduct({...newProduct,images:imgs})} /></div>
+                  <button type="submit" disabled={savingProduct} className="md:col-span-3 bg-white text-black py-4 rounded-full uppercase tracking-[0.3em] text-[10px] font-bold hover:bg-white/90 transition-colors font-display disabled:opacity-40 disabled:cursor-not-allowed">{savingProduct ? 'Saving...' : 'Publish to OBSIDIAN'}</button>
                 </form>
               </div>
               <div className="rounded-2xl border border-white/10 overflow-hidden" style={{ backgroundColor: '#0a0a0b' }}>
@@ -460,7 +528,7 @@ const Admin = ({
                         return (
                           <tr key={item._id} className="hover:bg-white/[0.02] transition-colors">
                             <td className="p-4 md:p-6 flex items-center gap-3">
-                              <img src={item.image} className="w-10 h-10 object-cover rounded-lg border border-white/10 flex-shrink-0" alt="" />
+                              <img src={item.images?.[0] || item.image} className="w-10 h-10 object-cover rounded-lg border border-white/10 flex-shrink-0" alt="" />
                               <div><p className="font-display text-sm text-white">{item.name}</p><p className="text-[9px] text-white/35">{item.brand} | Rs. {item.price?.toLocaleString()}</p></div>
                             </td>
                             <td className="p-4 md:p-6 text-center hidden sm:table-cell">
@@ -477,7 +545,7 @@ const Admin = ({
                             </td>
                             <td className="p-4 md:p-6 text-right space-x-1">
                               <button onClick={()=>setViewingInsights(item)} className="text-[9px] bg-white/5 hover:bg-white/10 text-white px-2.5 py-1.5 rounded-full transition-colors">Insights</button>
-                              <button onClick={()=>setEditingProduct(item)} className="text-[9px] bg-white/5 hover:bg-white/10 text-white px-2.5 py-1.5 rounded-full transition-colors">Edit</button>
+                              <button onClick={()=>setEditingProduct({...item, images: item.images?.length ? item.images : (item.image ? [item.image] : [])})} className="text-[9px] bg-white/5 hover:bg-white/10 text-white px-2.5 py-1.5 rounded-full transition-colors">Edit</button>
                               <button onClick={()=>deleteProduct(item._id)} className="text-[9px] border border-red-500/20 text-red-400 hover:bg-red-500/10 px-2.5 py-1.5 rounded-full transition-colors">Drop</button>
                             </td>
                           </tr>
@@ -615,28 +683,6 @@ const Admin = ({
             </div>
           )}
 
-          {activeTab === 'design' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-up">
-              <div className="rounded-2xl border border-white/10 p-6 md:p-8" style={{ backgroundColor: '#0a0a0b' }}>
-                <h3 className="text-xs font-bold text-white uppercase tracking-widest mb-8 border-b border-white/10 pb-4 font-display">Hero Image Management</h3>
-                <CloudinaryUpload label="Upload Hero Image" onUpload={url=>{if(url) setHeroImages([...heroImages,url]);}} />
-                <div className="grid grid-cols-3 gap-3 mt-6">
-                  {heroImages.map((img,i)=>(
-                    <div key={i} className="aspect-square bg-white/[0.03] rounded-xl overflow-hidden border border-white/10 relative group">
-                      <img src={img} className="w-full h-full object-cover" alt="" />
-                      <button onClick={()=>setHeroImages(heroImages.filter((_,j)=>j!==i))} className="absolute top-2 right-2 bg-red-500/80 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity">×</button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="rounded-2xl border border-white/10 p-6 md:p-8" style={{ backgroundColor: '#0a0a0b' }}>
-                <h3 className="text-xs font-bold text-white uppercase tracking-widest mb-6 border-b border-white/10 pb-4 font-display">Hero Adjustments</h3>
-                <label className="block text-[10px] text-white/40 uppercase tracking-widest mb-4">Image Zoom ({heroZoom}%)</label>
-                <input type="range" min="100" max="150" value={heroZoom} onChange={e=>setHeroZoom(Number(e.target.value))} className="w-full accent-white" />
-              </div>
-            </div>
-          )}
-
           {activeTab === 'settings' && (
             <div className="rounded-2xl border border-white/10 p-6 md:p-8 animate-fade-up" style={{ backgroundColor: '#0a0a0b' }}>
               <h3 className="text-xs font-bold text-white uppercase tracking-widest mb-8 border-b border-white/10 pb-4 font-display">Store Information & Policies</h3>
@@ -686,11 +732,11 @@ const Admin = ({
               <div><label className="text-[9px] text-white/40 uppercase mb-1 block">Price</label><input type="number" className={inp+" w-full"} value={editingProduct.price} onChange={e=>setEditingProduct({...editingProduct,price:e.target.value})} required /></div>
               <div><label className="text-[9px] text-white/40 uppercase mb-1 block">Stock</label><input type="number" className={inp+" w-full"} value={editingProduct.stock} onChange={e=>setEditingProduct({...editingProduct,stock:e.target.value})} required /></div>
               <div><label className="text-[9px] text-white/40 uppercase mb-1 block">Discount %</label><input type="number" className={inp+" w-full"} value={editingProduct.discount||0} onChange={e=>setEditingProduct({...editingProduct,discount:e.target.value})} /></div>
-              <div className="md:col-span-2"><CloudinaryUpload label="Product Image" currentImage={editingProduct.image} onUpload={url=>setEditingProduct({...editingProduct,image:url})} /></div>
+              <div className="md:col-span-2"><ImageGalleryUpload images={editingProduct.images || []} onChange={imgs=>setEditingProduct({...editingProduct,images:imgs})} /></div>
               <div><label className="text-[9px] text-white/40 uppercase mb-1 block">Notes</label><input type="text" className={inp+" w-full"} value={editingProduct.notes||''} onChange={e=>setEditingProduct({...editingProduct,notes:e.target.value})} /></div>
               <div><label className="text-[9px] text-white/40 uppercase mb-1 block">Features</label><input type="text" className={inp+" w-full"} value={editingProduct.features||''} onChange={e=>setEditingProduct({...editingProduct,features:e.target.value})} /></div>
               <div className="md:col-span-2"><label className="text-[9px] text-white/40 uppercase mb-1 block">Description</label><textarea className={inp+" w-full h-20 resize-none"} value={editingProduct.details} onChange={e=>setEditingProduct({...editingProduct,details:e.target.value})} /></div>
-              <button type="submit" className="md:col-span-2 bg-white text-black py-4 rounded-full uppercase tracking-widest text-[10px] font-bold hover:bg-white/90 transition-colors mt-2 font-display">Commit Changes</button>
+              <button type="submit" disabled={savingProduct} className="md:col-span-2 bg-white text-black py-4 rounded-full uppercase tracking-widest text-[10px] font-bold hover:bg-white/90 transition-colors mt-2 font-display disabled:opacity-40 disabled:cursor-not-allowed">{savingProduct ? 'Saving...' : 'Commit Changes'}</button>
             </form>
           </div>
         </div>
@@ -723,7 +769,7 @@ const Admin = ({
           <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
             <div className="border border-white/10 rounded-2xl w-full max-w-xl overflow-hidden flex flex-col md:flex-row" style={{ backgroundColor: '#0a0a0b' }}>
               <div className="w-full md:w-1/3 bg-white/5 relative min-h-40">
-                <img src={viewingInsights.image} alt="" className="w-full h-full object-cover absolute inset-0 opacity-50 mix-blend-overlay" />
+                <img src={viewingInsights.images?.[0] || viewingInsights.image} alt="" className="w-full h-full object-cover absolute inset-0 opacity-50 mix-blend-overlay" />
                 <div className="relative z-10 p-6 min-h-40 flex flex-col justify-end">
                   <button onClick={()=>setViewingInsights(null)} className="absolute top-4 left-4 bg-black/50 w-8 h-8 rounded-full text-white flex items-center justify-center hover:bg-white hover:text-black transition-colors">×</button>
                   <p className="text-[9px] text-white/60">{viewingInsights.brand}</p>

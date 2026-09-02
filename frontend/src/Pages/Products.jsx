@@ -58,7 +58,7 @@ const Products = () => {
   }, [location.search]);
 
   const filteredProducts = products.filter(product => {
-    const matchesAudience = audienceFilter === 'All' || (product.category || '').toLowerCase() === audienceFilter.toLowerCase();
+    const matchesAudience = audienceFilter === 'All' || (product.audience || '').toLowerCase() === audienceFilter.toLowerCase();
     const matchesType = typeFilter === 'All' || (product.type || '').toLowerCase() === typeFilter.toLowerCase();
     const matchesSale = !onSaleOnly || (product.discount || 0) > 0;
     const matchesSearch =
@@ -182,7 +182,7 @@ const Products = () => {
                   <Link to={`/product/${product._id}`}
                     className="collection-tile card-lift relative block aspect-[3/4] overflow-hidden rounded-2xl mb-3 sm:mb-4 border border-white/[0.06]"
                     style={{ backgroundColor: '#101012' }}>
-                    <img src={product.image} alt={product.name}
+                    <img src={product.images?.[0] || product.image} alt={product.name}
                       className="w-full h-full object-cover grayscale contrast-110 opacity-85 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700 ease-out" />
 
                     {/* Grey/white outline trace on hover, matching the collection tiles on Home */}

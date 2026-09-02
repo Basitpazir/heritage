@@ -75,16 +75,35 @@ function App() {
       .then(r => r.json()).then(data => setOrders(Array.isArray(data) ? data : [])).catch(() => {});
   }, [adminToken]);
 
+  // Returns { ok: true, product } on success or { ok: false, error } on
+  // failure — the caller (Admin.jsx) awaits this and decides what to show,
+  // instead of firing a success alert before the request has resolved.
   const addProduct = async (newProduct) => {
-    const res = await fetch(`${API}/products`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` }, body: JSON.stringify(newProduct) });
-    const data = await res.json();
-    if (res.ok) setProducts(prev => [data, ...prev]); else alert(data.error);
+    try {
+      const res = await fetch(`${API}/products`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` }, body: JSON.stringify(newProduct) });
+      const data = await res.json();
+      if (res.ok) {
+        setProducts(prev => [data, ...prev]);
+        return { ok: true, product: data };
+      }
+      return { ok: false, error: data.error || 'Failed to add product.' };
+    } catch (err) {
+      return { ok: false, error: err.message || 'Network error while adding product.' };
+    }
   };
 
   const updateProduct = async (id, updatedFields) => {
-    const res = await fetch(`${API}/products/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` }, body: JSON.stringify(updatedFields) });
-    const data = await res.json();
-    if (res.ok) setProducts(prev => prev.map(p => p._id === id ? data : p)); else alert(data.error);
+    try {
+      const res = await fetch(`${API}/products/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` }, body: JSON.stringify(updatedFields) });
+      const data = await res.json();
+      if (res.ok) {
+        setProducts(prev => prev.map(p => p._id === id ? data : p));
+        return { ok: true, product: data };
+      }
+      return { ok: false, error: data.error || 'Failed to update product.' };
+    } catch (err) {
+      return { ok: false, error: err.message || 'Network error while updating product.' };
+    }
   };
 
   const deleteProduct = async (id) => {
@@ -94,7 +113,7 @@ function App() {
   };
 
   const placeOrder = async (customerDetails, cartItems, total, paymentMethod) => {
-    const items = cartItems.map(item => ({ productId: item._id, name: item.name, brand: item.brand, image: item.image, price: item.price, discount: item.discount }));
+    const items = cartItems.map(item => ({ productId: item._id, name: item.name, brand: item.brand, image: item.images?.[0] || item.image, price: item.price, discount: item.discount }));
     const res = await fetch(`${API}/orders`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ customer: customerDetails, items, total, paymentMethod }) });
     const data = await res.json();
     if (res.ok) { setCart([]); fetchProducts(); return data.orderId; }
@@ -146,8 +165,6 @@ function App() {
                   products={products} orders={orders} setOrders={setOrders}
                   addProduct={addProduct} updateProduct={updateProduct} deleteProduct={deleteProduct}
                   setIsAdminLoggedIn={handleAdminLogout}
-                  heroImages={heroImages} setHeroImages={handleSetHeroImages}
-                  heroZoom={heroZoom} setHeroZoom={handleSetHeroZoom}
                   storeInfo={storeInfo} setStoreInfo={handleSetStoreInfo}
                   adminToken={adminToken}
                 />
