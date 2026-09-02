@@ -24,6 +24,25 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({ storage: storage });
 
+const MAX_PRODUCT_IMAGES = 8;
+
+// Normalize the images[] array coming from the client (JSON body from the
+// gallery uploader) and keep the legacy `image` field in sync as
+// images[0], so any old code still reading `image` keeps working.
+function normalizeImages(body, uploadedFile) {
+  let images = Array.isArray(body.images) ? body.images.filter(Boolean) : [];
+  images = images.slice(0, MAX_PRODUCT_IMAGES);
+
+  // A direct multipart file upload (if ever used) takes precedence and
+  // becomes the cover image.
+  if (uploadedFile) {
+    images = [uploadedFile.path, ...images.filter(img => img !== uploadedFile.path)].slice(0, MAX_PRODUCT_IMAGES);
+  }
+
+  const legacyImage = images[0] || body.image || '';
+  return { images, legacyImage };
+}
+
 // GET /api/products
 router.get('/', async (req, res) => {
   try {
@@ -46,16 +65,16 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/products
+// No minimum image count required — the admin gallery uploader allows 0-8
+// images per product. Do NOT reintroduce a hard "image is required" check.
 router.post('/', protectAdmin, upload.single('image'), async (req, res) => {
   try {
-    // Uses URL from body (from CloudinaryUpload.jsx) or direct file upload
-    const imageUrl = req.file ? req.file.path : req.body.image;
-
-    if (!imageUrl) return res.status(400).json({ error: 'Image is required' });
+    const { images, legacyImage } = normalizeImages(req.body, req.file);
 
     const product = await Product.create({
       ...req.body,
-      image: imageUrl,
+      image: legacyImage,
+      images,
       price: Number(req.body.price),
       stock: Number(req.body.stock) || 0,
       discount: Number(req.body.discount) || 0,
@@ -72,15 +91,21 @@ router.post('/', protectAdmin, upload.single('image'), async (req, res) => {
 // PUT /api/products/:id
 router.put('/:id', protectAdmin, upload.single('image'), async (req, res) => {
   try {
-    let updateData = { 
+    const { images, legacyImage } = normalizeImages(req.body, req.file);
+
+    let updateData = {
       ...req.body,
       price: Number(req.body.price),
       stock: Number(req.body.stock),
       discount: Number(req.body.discount)
     };
-    
-    if (req.file) {
-      updateData.image = req.file.path;
+
+    // Only overwrite images/image when the client actually sent an images
+    // array or a new file — otherwise leave the product's existing images
+    // untouched (e.g. a settings-only edit shouldn't wipe the gallery).
+    if (Array.isArray(req.body.images) || req.file) {
+      updateData.images = images;
+      updateData.image = legacyImage;
     }
 
     const product = await Product.findByIdAndUpdate(

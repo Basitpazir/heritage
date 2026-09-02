@@ -26,7 +26,12 @@ const productSchema = new mongoose.Schema({
   },
 
   price:    { type: Number, required: true, min: 0 },
-  image:    { type: String, required: true },
+  // Legacy single-image field — kept (optional) for backward compatibility
+  // with products created before the gallery upload existed. New writes
+  // should populate `images` instead; readers should prefer images[0] and
+  // fall back to `image` when images is empty.
+  image:    { type: String, default: '' },
+  images:   { type: [String], default: [] },
   details:  { type: String, default: '' },
   notes:    { type: String, default: '' },
   features: { type: String, default: '' },
